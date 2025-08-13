@@ -1,0 +1,636 @@
+/* =================================================================
+   CALENDAR PROFESSIONAL STYLES - StudyHub
+   Diseño profesional avanzado para el calendario manteniendo la 
+   consistencia con el sistema de diseño general
+================================================================= */
+
+/* Variables específicas del calendario */
+:root {
+    --calendar-bg: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    --calendar-header-bg: rgba(255, 255, 255, 0.95);
+    --calendar-cell-hover: rgba(102, 126, 234, 0.08);
+    --calendar-today-bg: rgba(102, 126, 234, 0.12);
+    --calendar-event-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    --calendar-border: rgba(102, 126, 234, 0.2);
+    --calendar-text-muted: rgba(255, 255, 255, 0.7);
+}
+
+/* Contenedor principal del calendario */
+.calendar-container {
+    background: var(--bg-primary);
+    border-radius: var(--border-radius-lg);
+    padding: 25px;
+    box-shadow: var(--shadow-lg);
+    position: relative;
+    border: 1px solid var(--border-color);
+}
+
+.calendar-container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: var(--calendar-bg);
+    z-index: 1;
+}
+
+/* Header del calendario */
+.calendar-header {
+    background: var(--calendar-header-bg);
+    padding: 20px 30px;
+    border-bottom: 2px solid var(--calendar-border);
+    backdrop-filter: blur(10px);
+    position: relative;
+    z-index: 2;
+    margin-bottom: 20px;
+}
+
+.calendar-title {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 15px;
+}
+
+.calendar-title h2 {
+    color: var(--text-primary);
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.calendar-title h2 i {
+    color: var(--primary-color);
+    font-size: 1.3rem;
+}
+
+/* Controles del calendario */
+.calendar-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.calendar-view-selector {
+    display: flex;
+    background: var(--bg-secondary);
+    border-radius: var(--border-radius);
+    padding: 4px;
+    border: 1px solid var(--border-color);
+}
+
+.view-btn {
+    padding: 8px 16px;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    font-weight: 500;
+    border-radius: calc(var(--border-radius) - 2px);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.view-btn.active {
+    background: var(--primary-color);
+    color: white;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.view-btn:hover:not(.active) {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+}
+
+/* Leyenda del calendario */
+.calendar-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    padding: 0;
+    margin: 0;
+    background: transparent;
+    border: none;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    padding: 6px 12px;
+    background: var(--bg-secondary);
+    border-radius: var(--border-radius);
+    border: 1px solid var(--border-color);
+    transition: all var(--transition-fast);
+}
+
+.legend-item:hover {
+    background: var(--bg-tertiary);
+    transform: translateY(-1px);
+}
+
+.legend-color {
+    width: 14px;
+    height: 14px;
+    border-radius: 3px;
+    flex-shrink: 0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+/* Contenido del calendario */
+.calendar-content {
+    padding: 0;
+    background: var(--bg-primary);
+}
+
+#calendar {
+    min-height: 650px;
+    width: 100%;
+}
+
+/* =================================================================
+   FULLCALENDAR BASIC CUSTOMIZATION
+================================================================= */
+
+/* Toolbar del FullCalendar */
+.fc-toolbar {
+    background: var(--bg-secondary);
+    padding: 15px 20px;
+    border-radius: var(--border-radius);
+    margin-bottom: 20px;
+    border: 1px solid var(--border-color);
+}
+
+.fc-toolbar-title {
+    color: var(--text-primary) !important;
+    font-size: 1.4rem !important;
+    font-weight: 600 !important;
+    margin: 0 !important;
+}
+
+/* Botones básicos */
+.fc-button {
+    background: var(--bg-primary) !important;
+    border: 1px solid var(--border-color) !important;
+    color: var(--text-primary) !important;
+    font-weight: 500 !important;
+    padding: 8px 16px !important;
+    border-radius: var(--border-radius) !important;
+    font-size: 0.875rem !important;
+}
+
+.fc-button:hover {
+    background: var(--primary-color) !important;
+    border-color: var(--primary-color) !important;
+    color: white !important;
+}
+
+.fc-button-primary {
+    background: var(--primary-color) !important;
+    border-color: var(--primary-color) !important;
+    color: white !important;
+}
+
+/* Vista del calendario */
+.fc-theme-standard {
+    border-color: var(--border-color) !important;
+}
+
+/* Headers de los días */
+.fc-col-header {
+    background: var(--bg-secondary) !important;
+    border-bottom: 1px solid var(--border-color) !important;
+}
+
+.fc-col-header-cell-cushion {
+    color: var(--text-primary) !important;
+    font-weight: 600 !important;
+    font-size: 0.875rem !important;
+}
+
+/* Celdas del calendario */
+.fc-daygrid-day {
+    background: var(--bg-primary) !important;
+    border-right: 1px solid var(--border-light) !important;
+    border-bottom: 1px solid var(--border-light) !important;
+}
+
+.fc-daygrid-day-number {
+    color: var(--text-primary) !important;
+    font-weight: 500 !important;
+    padding: 8px !important;
+}
+
+/* Día actual */
+.fc-day-today {
+    background: rgba(102, 126, 234, 0.1) !important;
+}
+
+.fc-day-today .fc-daygrid-day-number {
+    background: var(--primary-color) !important;
+    color: white !important;
+    border-radius: 50% !important;
+    width: 28px !important;
+    height: 28px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+/* Eventos básicos */
+.fc-event {
+    border-radius: 4px !important;
+    padding: 2px 6px !important;
+    margin: 1px !important;
+    font-size: 0.75rem !important;
+    font-weight: 500 !important;
+    cursor: pointer !important;
+}
+
+.fc-event-title {
+    font-weight: 500 !important;
+}
+
+.fc-event-title i {
+    margin-right: 4px !important;
+    font-size: 0.7rem !important;
+}
+
+/* =================================================================
+   EVENTOS PROFESIONALES
+================================================================= */
+
+/* Estilos base para eventos */
+.fc-event {
+    border: none !important;
+    border-radius: 6px !important;
+    padding: 4px 8px !important;
+    margin: 1px 2px !important;
+    font-size: 0.75rem !important;
+    font-weight: 500 !important;
+    cursor: pointer !important;
+    transition: all var(--transition-fast) !important;
+    box-shadow: var(--calendar-event-shadow) !important;
+    backdrop-filter: blur(5px) !important;
+    position: relative !important;
+    overflow: hidden !important;
+}
+
+.fc-event::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: currentColor;
+    opacity: 0.8;
+}
+
+.fc-event:hover {
+    transform: translateY(-2px) scale(1.05) !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2) !important;
+    z-index: 10 !important;
+}
+
+.fc-event-title {
+    font-weight: 500 !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 4px !important;
+}
+
+.fc-event-title i {
+    font-size: 0.7rem !important;
+    opacity: 0.9 !important;
+}
+
+/* Eventos de tareas con diseño profesional */
+.fc-event.calendar-task {
+    border-left: 4px solid !important;
+    background: rgba(255, 255, 255, 0.95) !important;
+    color: var(--text-primary) !important;
+    position: relative !important;
+}
+
+.fc-event.calendar-task::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 0;
+    height: 0;
+    border-left: 8px solid transparent;
+    border-right: 8px solid currentColor;
+    border-bottom: 8px solid transparent;
+    opacity: 0.6;
+}
+
+/* Estados de tareas con gradientes profesionales */
+.fc-event.task-terminado {
+    background: linear-gradient(135deg, #2ecc71, #27ae60) !important;
+    color: white !important;
+    opacity: 0.9 !important;
+    border-left-color: #229954 !important;
+}
+
+.fc-event.task-terminado .fc-event-title {
+    text-decoration: line-through !important;
+}
+
+.fc-event.task-en_progreso {
+    background: linear-gradient(135deg, #3498db, #2980b9) !important;
+    color: white !important;
+    border-left-color: #2471a3 !important;
+}
+
+.fc-event.task-pendiente {
+    background: linear-gradient(135deg, #95a5a6, #7f8c8d) !important;
+    color: white !important;
+    border-left-color: #5d6d7e !important;
+}
+
+/* Prioridades con efectos visuales mejorados */
+.fc-event.priority-high {
+    background: linear-gradient(135deg, #e74c3c, #c0392b) !important;
+    color: white !important;
+    border-left-color: #a93226 !important;
+    animation: pulse-high 2s infinite;
+}
+
+.fc-event.priority-medium {
+    background: linear-gradient(135deg, #f39c12, #e67e22) !important;
+    color: white !important;
+    border-left-color: #d68910 !important;
+}
+
+.fc-event.priority-low {
+    background: linear-gradient(135deg, #27ae60, #229954) !important;
+    color: white !important;
+    border-left-color: #1e8449 !important;
+}
+
+/* Animaciones sutiles */
+@keyframes pulse-high {
+    0%, 100% { box-shadow: 0 2px 8px rgba(231, 76, 60, 0.3); }
+    50% { box-shadow: 0 4px 16px rgba(231, 76, 60, 0.5); }
+}
+
+/* Tipos de eventos con iconografía mejorada */
+.fc-event.event-exam {
+    background: linear-gradient(135deg, #9b59b6, #8e44ad) !important;
+    color: white !important;
+    border-left-color: #7d3c98 !important;
+}
+
+.fc-event.event-assignment {
+    background: linear-gradient(135deg, #34495e, #2c3e50) !important;
+    color: white !important;
+    border-left-color: #1b2631 !important;
+}
+
+.fc-event.event-class {
+    background: linear-gradient(135deg, #16a085, #138d75) !important;
+    color: white !important;
+    border-left-color: #117a65 !important;
+}
+
+.fc-event.event-personal {
+    background: linear-gradient(135deg, #e67e22, #d35400) !important;
+    color: white !important;
+    border-left-color: #ba4a00 !important;
+}
+
+/* =================================================================
+   TOOLTIP PROFESIONAL
+================================================================= */
+
+.event-tooltip {
+    background: linear-gradient(135deg, #2c3e50, #34495e) !important;
+    color: white !important;
+    padding: 16px 20px !important;
+    border-radius: var(--border-radius) !important;
+    font-size: 0.875rem !important;
+    line-height: 1.5 !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3) !important;
+    z-index: 9999 !important;
+    max-width: 280px !important;
+    backdrop-filter: blur(10px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    position: relative !important;
+}
+
+.event-tooltip::before {
+    content: '';
+    position: absolute;
+    top: -8px;
+    left: 20px;
+    width: 0;
+    height: 0;
+    border-left: 8px solid transparent;
+    border-right: 8px solid transparent;
+    border-bottom: 8px solid #2c3e50;
+}
+
+.event-tooltip strong {
+    color: #ecf0f1 !important;
+    font-weight: 600 !important;
+    font-size: 0.95rem !important;
+    display: block !important;
+    margin-bottom: 8px !important;
+    padding-bottom: 8px !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2) !important;
+}
+
+.event-tooltip i {
+    margin-right: 6px !important;
+    opacity: 0.9 !important;
+    font-size: 0.8rem !important;
+}
+
+.event-tooltip small {
+    display: block !important;
+    margin: 4px 0 !important;
+    opacity: 0.9 !important;
+}
+
+/* =================================================================
+   RESPONSIVE DESIGN PROFESIONAL
+================================================================= */
+
+@media (max-width: 1024px) {
+    .calendar-container {
+        margin: 10px;
+    }
+    
+    .calendar-header {
+        padding: 15px 20px;
+    }
+    
+    .calendar-content {
+        padding: 20px;
+    }
+    
+    .calendar-title {
+        flex-direction: column;
+        gap: 15px;
+        align-items: flex-start;
+    }
+    
+    .calendar-controls {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+@media (max-width: 768px) {
+    .fc-toolbar {
+        flex-direction: column !important;
+        gap: 15px !important;
+        text-align: center !important;
+    }
+    
+    .fc-toolbar-chunk {
+        display: flex !important;
+        justify-content: center !important;
+        flex-wrap: wrap !important;
+        gap: 8px !important;
+    }
+    
+    .fc-button {
+        padding: 6px 12px !important;
+        font-size: 0.8rem !important;
+    }
+    
+    .fc-event.calendar-task,
+    .fc-event {
+        font-size: 0.7rem !important;
+        padding: 2px 6px !important;
+        margin: 1px !important;
+    }
+    
+    .fc-event-title {
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        white-space: nowrap !important;
+    }
+    
+    .event-tooltip {
+        font-size: 0.8rem !important;
+        padding: 12px 16px !important;
+        max-width: 240px !important;
+    }
+    
+    .calendar-legend {
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .legend-item {
+        justify-content: center;
+        font-size: 0.8rem;
+    }
+    
+    #calendar {
+        min-height: 500px;
+    }
+}
+
+@media (max-width: 480px) {
+    .calendar-header {
+        padding: 12px 15px;
+    }
+    
+    .calendar-content {
+        padding: 15px;
+    }
+    
+    .calendar-title h2 {
+        font-size: 1.25rem;
+    }
+    
+    .fc-col-header-cell-cushion {
+        font-size: 0.75rem !important;
+    }
+    
+    .fc-daygrid-day-number {
+        font-size: 0.8rem !important;
+        width: 28px !important;
+        height: 28px !important;
+    }
+}
+
+/* =================================================================
+   ESTADOS DE CARGA Y ANIMACIONES
+================================================================= */
+
+.calendar-loading {
+    position: relative;
+    pointer-events: none;
+    opacity: 0.7;
+}
+
+.calendar-loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 32px;
+    height: 32px;
+    margin: -16px 0 0 -16px;
+    border: 3px solid var(--border-color);
+    border-top-color: var(--primary-color);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    z-index: 1000;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Entrada suave del calendario */
+.calendar-container {
+    animation: fadeInUp 0.6s ease-out;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* =================================================================
+   MODOS OSCURO/CLARO
+================================================================= */
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --calendar-header-bg: rgba(33, 37, 41, 0.95);
+        --calendar-cell-hover: rgba(102, 126, 234, 0.15);
+        --calendar-today-bg: rgba(102, 126, 234, 0.2);
+        --calendar-text-muted: rgba(255, 255, 255, 0.6);
+    }
+    
+    .fc-event.calendar-task {
+        background: rgba(33, 37, 41, 0.95) !important;
+        color: var(--text-primary) !important;
+    }
+}

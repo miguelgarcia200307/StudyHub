@@ -1,0 +1,1111 @@
+<!DOCTYPE html>    <!-- CSS personalizado modular -->
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/utilities.css">
+    <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/dashboard.css">
+    <link rel="stylesheet" href="css/calendar.css">
+    <link rel="stylesheet" href="css/subjects.css">
+    <link rel="stylesheet" href="css/animations.css">
+    <link rel="stylesheet" href="css/tasks.css">
+    <link rel="stylesheet" href="css/profile.css">
+    <link rel="stylesheet" href="css/login.css">g="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StudyHub - Gestión Académica</title>
+    
+    <!-- Fuentes de Google -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome para iconos -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- FullCalendar CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css" rel="stylesheet">
+    
+    <!-- CSS personalizado modular -->
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/utilities.css">
+    <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/dashboard.css">
+    <link rel="stylesheet" href="css/calendar.css">
+    <link rel="stylesheet" href="css/subjects.css">
+    <link rel="stylesheet" href="css/tasks.css">
+    <link rel="stylesheet" href="css/profile.css">
+    <link rel="stylesheet" href="css/animations.css">
+</head>
+<body>
+    <!-- Pantalla de carga -->
+    <div id="loading-screen" class="loading-screen">
+        <div class="loading-spinner"></div>
+        <p>Cargando StudyHub...</p>
+    </div>
+
+    <!-- Modal de login/registro -->
+    <div id="auth-modal" class="modal active">
+        <div class="modal-content">
+            <div class="auth-container">
+                <!-- Partículas decorativas -->
+                <div class="particles">
+                    <div class="particle"></div>
+                    <div class="particle"></div>
+                    <div class="particle"></div>
+                    <div class="particle"></div>
+                    <div class="particle"></div>
+                </div>
+                
+                <div class="auth-header">
+                    <img src="img/LOGO STUDI.png" alt="StudyHub Logo" class="logo">
+                    <h1>StudyHub</h1>
+                    <p>Tu plataforma de gestión académica</p>
+                </div>
+
+                <!-- Formulario de Login -->
+                <div id="login-form" class="auth-form active">
+                    <h2>Iniciar Sesión</h2>
+                    <form id="loginForm">
+                        <div class="form-group">
+                            <i class="fas fa-user"></i>
+                            <input type="text" id="login-username" placeholder="Usuario o email" required>
+                            <small class="form-help">Ingresa tu usuario o email.</small>
+                        </div>
+                        <div class="form-group">
+                            <i class="fas fa-lock"></i>
+                            <input type="password" id="login-password" placeholder="Contraseña" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary" style="width:100%;">
+                            <i class="fas fa-sign-in-alt"></i>
+                            Iniciar Sesión
+                        </button>
+                    </form>
+                    <p class="auth-info">
+                        <i class="fas fa-lock"></i>
+                        Acceso solo por invitación
+                    </p>
+                </div>
+
+                <!-- Formulario de Registro -->
+                <div id="register-form" class="auth-form">
+                    <h2>Crear Cuenta</h2>
+                    <div class="invite-notice">
+                        <i class="fas fa-user-friends"></i>
+                        <p>Acceso solo por invitación</p>
+                    </div>
+                    <form id="registerForm">
+                        <div class="form-group">
+                            <i class="fas fa-ticket-alt"></i>
+                            <input type="text" id="register-invite-code" placeholder="Código de invitación" required>
+                            <small class="form-help">Código proporcionado por quien te invitó</small>
+                        </div>
+                        <div class="form-group">
+                            <i class="fas fa-user"></i>
+                            <input type="text" id="register-name" placeholder="Nombre completo" required>
+                        </div>
+                        <div class="form-group">
+                            <i class="fas fa-envelope"></i>
+                            <input type="email" id="register-email" placeholder="Correo electrónico" required>
+                            <small class="form-help">Para confirmación y notificaciones</small>
+                        </div>
+                        <div class="form-group">
+                            <i class="fas fa-graduation-cap"></i>
+                            <input type="text" id="register-career" placeholder="Carrera" required>
+                        </div>
+                        <div class="form-group">
+                            <i class="fas fa-calendar"></i>
+                            <input type="text" id="register-semester" placeholder="Semestre" required>
+                        </div>
+                        <div class="form-group">
+                            <i class="fas fa-lock"></i>
+                            <input type="password" id="register-password" placeholder="Contraseña" required>
+                        </div>
+                        <div class="form-group">
+                            <i class="fas fa-lock"></i>
+                            <input type="password" id="register-confirm-password" placeholder="Confirmar contraseña" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-user-plus"></i>
+                            Crear Cuenta
+                        </button>
+                        <small class="form-help">El username lo podrás definir luego en tu perfil.</small>
+                    </form>
+                    <p class="auth-switch">
+                        ¿Ya tienes cuenta? <a href="#" onclick="showLogin()">Inicia sesión aquí</a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Aplicación principal -->
+    <div id="app" class="app">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <img src="img/LOGO STUDI.png" alt="StudyHub Logo" class="sidebar-logo">
+                <h3>StudyHub</h3>
+                <button class="sidebar-toggle" id="sidebar-toggle">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
+
+            <nav class="sidebar-nav">
+                <ul>
+                    <li>
+                        <a href="#" data-section="dashboard" class="nav-link active">
+                            <i class="fas fa-home"></i>
+                            <span>Dashboard</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" data-section="calendar" class="nav-link">
+                            <i class="fas fa-calendar-alt"></i>
+                            <span>Calendario</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" data-section="subjects" class="nav-link">
+                            <i class="fas fa-book"></i>
+                            <span>Asignaturas</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" data-section="notes" class="nav-link">
+                            <i class="fas fa-sticky-note"></i>
+                            <span>Notas</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" data-section="tasks" class="nav-link">
+                            <i class="fas fa-tasks"></i>
+                            <span>Tareas</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" data-section="profile" class="nav-link">
+                            <i class="fas fa-user"></i>
+                            <span>Perfil</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="user-info">
+                    <img src="img/default-avatar.png" alt="Usuario" class="user-avatar" id="user-avatar">
+                    <div class="user-details">
+                        <span class="user-name" id="user-name">Usuario</span>
+                        <span class="user-email" id="user-email">email@ejemplo.com</span>
+                    </div>
+                </div>
+                <button class="btn btn-outline logout-btn" id="logout-btn">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Cerrar Sesión</span>
+                </button>
+            </div>
+        </aside>
+
+        <!-- Contenido principal -->
+        <main class="main-content">
+            <!-- Header -->
+            <header class="header">
+                <div class="header-left">
+                    <button class="mobile-menu-toggle" id="mobile-menu-toggle">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <h1 id="page-title">Dashboard</h1>
+                </div>
+                <div class="header-right">
+                    <div class="theme-toggle">
+                        <button id="theme-toggle" class="btn btn-outline">
+                            <i class="fas fa-moon"></i>
+                        </button>
+                    </div>
+                    <div class="notifications">
+                        <button class="btn btn-outline" id="notifications-btn">
+                            <i class="fas fa-bell"></i>
+                            <span class="notification-badge" id="notification-badge">0</span>
+                        </button>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Contenido de las secciones -->
+            <div class="content">
+                <!-- Dashboard -->
+                <section id="dashboard-section" class="content-section active">
+                    <!-- SVG Definitions for Gradients -->
+                    <svg class="dashboard-svg-defs">
+                        <defs>
+                            <linearGradient id="gradient-primary" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
+                                <stop offset="100%" style="stop-color:#764ba2;stop-opacity:1" />
+                            </linearGradient>
+                            <linearGradient id="gradient-success" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" style="stop-color:#4facfe;stop-opacity:1" />
+                                <stop offset="100%" style="stop-color:#00f2fe;stop-opacity:1" />
+                            </linearGradient>
+                            <linearGradient id="gradient-warning" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" style="stop-color:#43e97b;stop-opacity:1" />
+                                <stop offset="100%" style="stop-color:#38f9d7;stop-opacity:1" />
+                            </linearGradient>
+                            <linearGradient id="gradient-danger" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" style="stop-color:#fa709a;stop-opacity:1" />
+                                <stop offset="100%" style="stop-color:#fee140;stop-opacity:1" />
+                            </linearGradient>
+                        </defs>
+                    </svg>
+
+                    <div class="dashboard-container">
+                        <div class="dashboard-content">
+                            <div class="dashboard-grid">
+                                <!-- Estadísticas Generales -->
+                                <div class="dashboard-grid-item stats-overview animate-fadeInUp">
+                                    <div class="card-header-modern">
+                                        <div class="card-title-modern">
+                                            <div class="card-title-icon">
+                                                <i class="fas fa-chart-line"></i>
+                                            </div>
+                                            Resumen General
+                                        </div>
+                                        <div class="card-actions-modern">
+                                            <button class="btn-modern btn-ghost btn-icon tooltip-modern" data-tooltip="Actualizar estadísticas" id="refresh-stats-btn">
+                                                <i class="fas fa-sync-alt"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="stats-container">
+                                        <div class="stat-card hover-shadow-lift" data-section="subjects">
+                                            <div class="stat-card-header">
+                                                <div class="stat-icon subjects">
+                                                    <i class="fas fa-book"></i>
+                                                </div>
+                                                <div class="stat-menu">
+                                                    <button class="stat-menu-btn">
+                                                        <i class="fas fa-ellipsis-h"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            <div class="stat-number" id="total-subjects">0</div>
+                                            <div class="stat-label">Asignaturas</div>
+                                            <div class="stat-change positive">
+                                                <div class="stat-change-icon">
+                                                    <i class="fas fa-arrow-up"></i>
+                                                </div>
+                                                <span>+2 esta semana</span>
+                                            </div>
+                                        </div>
+
+                                        <div class="stat-card hover-shadow-lift" data-section="tasks">
+                                            <div class="stat-card-header">
+                                                <div class="stat-icon tasks">
+                                                    <i class="fas fa-tasks"></i>
+                                                </div>
+                                                <div class="stat-menu">
+                                                    <button class="stat-menu-btn">
+                                                        <i class="fas fa-ellipsis-h"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            <div class="stat-number" id="pending-tasks">0</div>
+                                            <div class="stat-label">Tareas Pendientes</div>
+                                            <div class="stat-change negative">
+                                                <div class="stat-change-icon">
+                                                    <i class="fas fa-arrow-down"></i>
+                                                </div>
+                                                <span>-3 desde ayer</span>
+                                            </div>
+                                        </div>
+
+                                        <div class="stat-card hover-shadow-lift" data-section="notes">
+                                            <div class="stat-card-header">
+                                                <div class="stat-icon notes">
+                                                    <i class="fas fa-sticky-note"></i>
+                                                </div>
+                                                <div class="stat-menu">
+                                                    <button class="stat-menu-btn">
+                                                        <i class="fas fa-ellipsis-h"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            <div class="stat-number" id="total-notes">0</div>
+                                            <div class="stat-label">Notas Guardadas</div>
+                                            <div class="stat-change positive">
+                                                <div class="stat-change-icon">
+                                                    <i class="fas fa-arrow-up"></i>
+                                                </div>
+                                                <span>+5 hoy</span>
+                                            </div>
+                                        </div>
+
+                                        <div class="stat-card hover-shadow-lift" data-section="calendar">
+                                            <div class="stat-card-header">
+                                                <div class="stat-icon events">
+                                                    <i class="fas fa-calendar-check"></i>
+                                                </div>
+                                                <div class="stat-menu">
+                                                    <button class="stat-menu-btn">
+                                                        <i class="fas fa-ellipsis-h"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            <div class="stat-number" id="upcoming-events">0</div>
+                                            <div class="stat-label">Eventos Próximos</div>
+                                            <div class="stat-change positive">
+                                                <div class="stat-change-icon">
+                                                    <i class="fas fa-calendar-plus"></i>
+                                                </div>
+                                                <span>Esta semana</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Acciones Rápidas -->
+                                <div class="dashboard-grid-item quick-actions animate-fadeInUp animate-delay-100">
+                                    <div class="quick-actions-container">
+                                        <div class="quick-actions-header">
+                                            <h3 class="quick-actions-title">Acciones Rápidas</h3>
+                                        </div>
+                                        <div class="quick-actions-grid">
+                                            <div class="quick-action-card" data-action="new-subject">
+                                                <div class="quick-action-icon">
+                                                    <i class="fas fa-book-open"></i>
+                                                </div>
+                                                <span class="quick-action-label">Nueva Asignatura</span>
+                                            </div>
+                                            <div class="quick-action-card" data-action="new-event">
+                                                <div class="quick-action-icon">
+                                                    <i class="fas fa-calendar-plus"></i>
+                                                </div>
+                                                <span class="quick-action-label">Nuevo Evento</span>
+                                            </div>
+                                            <div class="quick-action-card" data-action="new-note">
+                                                <div class="quick-action-icon">
+                                                    <i class="fas fa-sticky-note"></i>
+                                                </div>
+                                                <span class="quick-action-label">Nueva Nota</span>
+                                            </div>
+                                            <div class="quick-action-card" data-action="new-task">
+                                                <div class="quick-action-icon">
+                                                    <i class="fas fa-plus-circle"></i>
+                                                </div>
+                                                <span class="quick-action-label">Nueva Tarea</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Actividad Reciente -->
+                                <div class="dashboard-grid-item recent-activity animate-fadeInUp animate-delay-200">
+                                    <div class="activity-container">
+                                        <div class="activity-header">
+                                            <h3 class="activity-title">Actividad Reciente</h3>
+                                            <button class="btn-modern btn-ghost btn-icon" id="refresh-activity-btn">
+                                                <i class="fas fa-sync-alt"></i>
+                                            </button>
+                                        </div>
+                                        <div class="activity-list" id="recent-activity">
+                                            <!-- Se llena dinámicamente desde la base de datos -->
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Tareas Próximas -->
+                                <div class="dashboard-grid-item upcoming-tasks animate-fadeInUp animate-delay-300">
+                                    <div class="tasks-container">
+                                        <div class="tasks-header">
+                                            <h3 class="tasks-title">Próximas Tareas</h3>
+                                            <button class="btn-modern btn-primary btn-sm" id="add-quick-task-btn">
+                                                <i class="fas fa-plus"></i>
+                                                Nueva
+                                            </button>
+                                        </div>
+                                        <div class="tasks-list" id="upcoming-tasks-list">
+                                            <!-- Se llena dinámicamente desde la base de datos -->
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Progreso de Tareas -->
+                                <div class="dashboard-grid-item progress-overview animate-fadeInUp animate-delay-100">
+                                    <div class="card-header-modern">
+                                        <div class="card-title-modern">
+                                            <div class="card-title-icon">
+                                                <i class="fas fa-chart-pie"></i>
+                                            </div>
+                                            Progreso de Tareas
+                                        </div>
+                                    </div>
+                                    <div class="progress-container">
+                                        <div class="progress-item">
+                                            <div class="progress-circle">
+                                                <svg viewBox="0 0 42 42">
+                                                    <circle class="progress-circle-bg" cx="21" cy="21" r="15.915"></circle>
+                                                    <circle class="progress-circle-fill pending" cx="21" cy="21" r="15.915" 
+                                                            stroke-dasharray="0 100" id="progress-pending-circle"></circle>
+                                                </svg>
+                                                <div class="progress-text">
+                                                    <div class="progress-percentage" id="progress-pending-percentage">0%</div>
+                                                    <div class="progress-count" id="progress-pending-count">0</div>
+                                                </div>
+                                            </div>
+                                            <div class="progress-label">Pendientes</div>
+                                        </div>
+
+                                        <div class="progress-item">
+                                            <div class="progress-circle">
+                                                <svg viewBox="0 0 42 42">
+                                                    <circle class="progress-circle-bg" cx="21" cy="21" r="15.915"></circle>
+                                                    <circle class="progress-circle-fill in-progress" cx="21" cy="21" r="15.915" 
+                                                            stroke-dasharray="0 100" id="progress-in-progress-circle"></circle>
+                                                </svg>
+                                                <div class="progress-text">
+                                                    <div class="progress-percentage" id="progress-in-progress-percentage">0%</div>
+                                                    <div class="progress-count" id="progress-in-progress-count">0</div>
+                                                </div>
+                                            </div>
+                                            <div class="progress-label">En Progreso</div>
+                                        </div>
+
+                                        <div class="progress-item">
+                                            <div class="progress-circle">
+                                                <svg viewBox="0 0 42 42">
+                                                    <circle class="progress-circle-bg" cx="21" cy="21" r="15.915"></circle>
+                                                    <circle class="progress-circle-fill completed" cx="21" cy="21" r="15.915" 
+                                                            stroke-dasharray="0 100" id="progress-completed-circle"></circle>
+                                                </svg>
+                                                <div class="progress-text">
+                                                    <div class="progress-percentage" id="progress-completed-percentage">0%</div>
+                                                    <div class="progress-count" id="progress-completed-count">0</div>
+                                                </div>
+                                            </div>
+                                            <div class="progress-label">Completadas</div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Mini Calendario -->
+                                <div class="dashboard-grid-item calendar-preview animate-fadeInUp animate-delay-200">
+                                    <div class="calendar-preview-container">
+                                        <div class="card-header-modern">
+                                            <div class="card-title-modern">
+                                                <div class="card-title-icon">
+                                                    <i class="fas fa-calendar-alt"></i>
+                                                </div>
+                                                Calendario
+                                            </div>
+                                            <button class="btn-modern btn-outline btn-sm" data-section="calendar">
+                                                Ver todo
+                                            </button>
+                                        </div>
+                                        <div class="calendar-mini">
+                                            <div class="calendar-header">
+                                                <button class="calendar-nav-btn" id="prev-month">
+                                                    <i class="fas fa-chevron-left"></i>
+                                                </button>
+                                                <div class="calendar-month" id="current-month">Agosto 2025</div>
+                                                <button class="calendar-nav-btn" id="next-month">
+                                                    <i class="fas fa-chevron-right"></i>
+                                                </button>
+                                            </div>
+                                            <div class="calendar-grid" id="mini-calendar-grid">
+                                                <!-- Se genera dinámicamente -->
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Centro de Notificaciones -->
+                                <div class="dashboard-grid-item notifications-center animate-fadeInUp animate-delay-300">
+                                    <div class="notifications-container">
+                                        <div class="card-header-modern">
+                                            <div class="card-title-modern">
+                                                <div class="card-title-icon">
+                                                    <i class="fas fa-bell"></i>
+                                                </div>
+                                                Notificaciones
+                                            </div>
+                                        </div>
+                                        <div class="card-body-modern" id="notifications-container">
+                                            <!-- Se llena dinámicamente desde la base de datos -->
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Calendario -->
+                <section id="calendar-section" class="content-section">
+                    <div class="section-header">
+                        <h2>Calendario Profesional</h2>
+                        <button class="btn btn-primary" id="add-event-btn">
+                            <i class="fas fa-plus"></i>
+                            Nuevo Evento
+                        </button>
+                    </div>
+                    
+                    <div class="calendar-container">
+                        <div class="calendar-content">
+                            <div id="calendar"></div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Asignaturas -->
+                <section id="subjects-section" class="content-section">
+                    <div class="section-header">
+                        <h2>Asignaturas</h2>
+                        <button class="btn btn-primary" id="add-subject-btn">
+                            <i class="fas fa-plus"></i>
+                            Nueva Asignatura
+                        </button>
+                    </div>
+                    <div class="subjects-grid" id="subjects-grid">
+                        <!-- Se llena dinámicamente -->
+                    </div>
+                </section>
+
+                <!-- Notas -->
+                <section id="notes-section" class="content-section">
+                    <div class="section-header">
+                        <h2>Notas</h2>
+                        <div class="notes-actions">
+                            <div class="search-box">
+                                <i class="fas fa-search"></i>
+                                <input type="text" id="notes-search" placeholder="Buscar notas...">
+                            </div>
+                            <button class="btn btn-primary" id="add-note-btn">
+                                <i class="fas fa-plus"></i>
+                                Nueva Nota
+                            </button>
+                        </div>
+                    </div>
+                    <div class="notes-grid" id="notes-grid">
+                        <!-- Se llena dinámicamente -->
+                    </div>
+                </section>
+
+                <!-- Tareas -->
+                <section id="tasks-section" class="content-section">
+                    <!-- Header profesional de tareas -->
+                    <div class="tasks-header">
+                        <div class="tasks-header-content">
+                            <div class="tasks-title">
+                                <i class="fas fa-tasks"></i>
+                                <h2>Gestión de Tareas</h2>
+                            </div>
+                            <div class="tasks-stats">
+                                <div class="task-stat-pill">
+                                    <i class="fas fa-list-check"></i>
+                                    <span id="total-tasks-count">0</span> Total
+                                </div>
+                                <div class="task-stat-pill">
+                                    <i class="fas fa-clock"></i>
+                                    <span id="pending-tasks-count">0</span> Pendientes
+                                </div>
+                                <div class="task-stat-pill">
+                                    <i class="fas fa-check-circle"></i>
+                                    <span id="completed-tasks-count">0</span> Completadas
+                                </div>
+                            </div>
+                            <div class="view-toggle">
+                                <button class="view-toggle-btn active" data-view="list">
+                                    <i class="fas fa-list"></i>
+                                    Lista
+                                </button>
+                                <button class="view-toggle-btn" data-view="grid">
+                                    <i class="fas fa-th-large"></i>
+                                    Tarjetas
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Controles superiores -->
+                    <div class="section-controls">
+                        <div class="tasks-filters">
+                            <button class="filter-btn active" data-filter="all">
+                                <i class="fas fa-list"></i>
+                                Todas
+                            </button>
+                            <button class="filter-btn" data-filter="pending">
+                                <i class="fas fa-clock"></i>
+                                Pendientes
+                            </button>
+                            <button class="filter-btn" data-filter="in-progress">
+                                <i class="fas fa-spinner"></i>
+                                En Progreso
+                            </button>
+                            <button class="filter-btn" data-filter="completed">
+                                <i class="fas fa-check-circle"></i>
+                                Completadas
+                            </button>
+                        </div>
+                        <button class="btn btn-primary" id="add-task-btn">
+                            <i class="fas fa-plus"></i>
+                            Nueva Tarea
+                        </button>
+                    </div>
+
+                    <!-- Contenedor de tareas -->
+                    <div class="tasks-container">
+                        <div class="tasks-list" id="tasks-list">
+                            <!-- Se llena dinámicamente -->
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Perfil -->
+                <section id="profile-section" class="content-section">
+                    <!-- Header profesional del perfil -->
+                    <div class="profile-header-modern">
+                        <div class="profile-title">
+                            <i class="fas fa-user-circle"></i>
+                            <h2>Perfil de Usuario</h2>
+                        </div>
+                        <div class="profile-subtitle">
+                            <p>Gestiona tu información personal y preferencias de cuenta</p>
+                        </div>
+                    </div>
+                    
+                    <div class="profile-container">
+                        <div class="card profile-card">
+                            <div class="profile-header">
+                                <div class="profile-avatar-modern">
+                                    <div class="avatar-container-modern">
+                                        <img src="img/default-avatar.png" alt="Avatar" id="profile-avatar" class="avatar-image-modern">
+                                    </div>
+                                    <button class="avatar-upload-btn" id="avatar-upload-btn">
+                                        <i class="fas fa-camera"></i>
+                                    </button>
+                                    <input type="file" id="avatar-upload" accept="image/*" style="display: none;">
+                                </div>
+                                <div class="profile-info">
+                                    <h3 id="profile-name">Nombre del Usuario</h3>
+                                    <p id="profile-email">
+                                        <i class="fas fa-envelope"></i>
+                                        email@ejemplo.com
+                                    </p>
+                                    <span class="profile-role member" id="profile-role">
+                                        <i class="fas fa-user"></i>
+                                        Miembro
+                                    </span>
+                                </div>
+                            </div>
+                            
+                            <form id="profile-form" class="profile-form">
+                                <div class="form-group">
+                                    <label for="profile-name-input">
+                                        <i class="fas fa-user"></i>
+                                        Nombre completo
+                                    </label>
+                                    <input type="text" id="profile-name-input" placeholder="Ingresa tu nombre completo" required>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="profile-career-input">
+                                        <i class="fas fa-graduation-cap"></i>
+                                        Carrera
+                                    </label>
+                                    <input type="text" id="profile-career-input" placeholder="Ej: Ingeniería en Sistemas" required>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="profile-semester-input">
+                                        <i class="fas fa-calendar-alt"></i>
+                                        Semestre
+                                    </label>
+                                    <input type="text" id="profile-semester-input" placeholder="Ej: 5to Semestre" required>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="profile-username-input">
+                                        <i class="fas fa-at"></i>
+                                        Usuario
+                                    </label>
+                                    <div class="username-group">
+                                        <input type="text" id="profile-username-input" placeholder="Define tu username único">
+                                        <button type="button" class="btn btn-outline" id="activate-username-profile-btn">
+                                            <i class="fas fa-user-check"></i>
+                                            Activar Username
+                                        </button>
+                                    </div>
+                                    <small class="form-help" id="profile-username-help">
+                                        <i class="fas fa-info-circle"></i>
+                                        Debe tener 3-50 caracteres: letras, números o guión bajo (_)
+                                    </small>
+                                </div>
+                                
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save"></i>
+                                    Guardar Cambios
+                                </button>
+                            </form>
+                        </div>
+                        
+                        <!-- Sección de Invitación -->
+                        <div class="card invite-card">
+                            <div class="card-header">
+                                <h3>
+                                    <i class="fas fa-user-plus"></i>
+                                    Invitar Amigos
+                                </h3>
+                                <p>Comparte el acceso a StudyHub con tus amigos</p>
+                            </div>
+                            <div class="card-body">
+                                <div class="invite-section">
+                                    <label>Link de Invitación</label>
+                                    <div class="invite-link-container">
+                                        <input type="text" id="invitation-link" readonly>
+                                        <button type="button" class="btn btn-outline" onclick="copyInvitationLink()">
+                                            <i class="fas fa-copy"></i>
+                                            Copiar
+                                        </button>
+                                    </div>
+                                    <small class="form-help">
+                                        <i class="fas fa-info-circle"></i>
+                                        Comparte este enlace para que tus amigos puedan registrarse
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modales -->
+    <!-- Modal para eventos -->
+    <div id="event-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title-section">
+                    <i class="fas fa-calendar-alt"></i>
+                    <h3 id="event-modal-title">Nuevo Evento</h3>
+                </div>
+                <button class="modal-close" onclick="closeModal('event-modal')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="event-form">
+                    <div class="form-group">
+                        <label for="event-title">
+                            <i class="fas fa-heading"></i>
+                            Título
+                        </label>
+                        <input type="text" id="event-title" placeholder="Nombre del evento..." required>
+                    </div>
+                    <div class="form-group">
+                        <label for="event-description">
+                            <i class="fas fa-align-left"></i>
+                            Descripción
+                        </label>
+                        <textarea id="event-description" rows="3" placeholder="Describe los detalles del evento..."></textarea>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="event-start-date">
+                                <i class="fas fa-clock"></i>
+                                Fecha de inicio
+                            </label>
+                            <input type="datetime-local" id="event-start-date" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="event-end-date">
+                                <i class="fas fa-clock"></i>
+                                Fecha de fin
+                            </label>
+                            <input type="datetime-local" id="event-end-date" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="event-type">
+                                <i class="fas fa-tag"></i>
+                                Tipo
+                            </label>
+                            <select id="event-type" required>
+                                <option value="">Seleccionar tipo...</option>
+                                <option value="exam">📝 Examen</option>
+                                <option value="assignment">📋 Trabajo</option>
+                                <option value="class">🎓 Clase</option>
+                                <option value="personal">👤 Personal</option>
+                                <option value="other">📌 Otro</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="event-subject">
+                                <i class="fas fa-book"></i>
+                                Asignatura
+                            </label>
+                            <select id="event-subject">
+                                <option value="">Sin asignatura específica</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline" onclick="closeModal('event-modal')">
+                            <i class="fas fa-times"></i>
+                            Cancelar
+                        </button>
+                        <button type="button" id="delete-event-btn" class="btn btn-danger" style="display: none;" onclick="window.calendarManager.deleteCurrentEvent()">
+                            <i class="fas fa-trash-alt"></i>
+                            Eliminar Evento
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i>
+                            Guardar Evento
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para asignaturas -->
+    <div id="subject-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title-section">
+                    <i class="fas fa-graduation-cap"></i>
+                    <h3 id="subject-modal-title">Nueva Asignatura</h3>
+                </div>
+                <button class="modal-close" onclick="closeModal('subject-modal')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="subject-form">
+                    <div class="form-group">
+                        <label for="subject-name">
+                            <i class="fas fa-book"></i>
+                            Nombre de la Asignatura
+                        </label>
+                        <input type="text" id="subject-name" placeholder="Ej: Matemáticas Avanzadas" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="subject-professor">
+                            <i class="fas fa-user-tie"></i>
+                            Profesor
+                        </label>
+                        <input type="text" id="subject-professor" placeholder="Nombre del profesor" required>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="subject-schedule">
+                                <i class="fas fa-clock"></i>
+                                Horario
+                            </label>
+                            <input type="text" id="subject-schedule" placeholder="Ej: Lunes 8:00-10:00" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="subject-room">
+                                <i class="fas fa-door-open"></i>
+                                Salón
+                            </label>
+                            <input type="text" id="subject-room" placeholder="Ej: A-203" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="subject-color">
+                            <i class="fas fa-palette"></i>
+                            Color Identificativo
+                        </label>
+                        <input type="color" id="subject-color" value="#3498db">
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline" onclick="closeModal('subject-modal')">
+                            <i class="fas fa-times"></i>
+                            Cancelar
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i>
+                            Guardar Asignatura
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para notas -->
+    <div id="note-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title-section">
+                    <i class="fas fa-sticky-note"></i>
+                    <h3 id="note-modal-title">Nueva Nota</h3>
+                </div>
+                <button class="modal-close" onclick="closeModal('note-modal')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="note-form">
+                    <div class="form-group">
+                        <label for="note-title">
+                            <i class="fas fa-heading"></i>
+                            Título de la Nota
+                        </label>
+                        <input type="text" id="note-title" placeholder="Título descriptivo de tu nota" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="note-content">
+                            <i class="fas fa-edit"></i>
+                            Contenido
+                        </label>
+                        <textarea id="note-content" rows="8" placeholder="Escribe el contenido de tu nota aquí..." required></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="note-subject">
+                            <i class="fas fa-tag"></i>
+                            Asignatura
+                        </label>
+                        <select id="note-subject">
+                            <option value="">Sin asignatura</option>
+                        </select>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline" onclick="closeModal('note-modal')">
+                            <i class="fas fa-times"></i>
+                            Cancelar
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i>
+                            Guardar Nota
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para tareas -->
+    <div id="task-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title-section">
+                    <i class="fas fa-tasks"></i>
+                    <h3 id="task-modal-title">Nueva Tarea</h3>
+                </div>
+                <button class="modal-close" onclick="closeModal('task-modal')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form id="task-form">
+                <div class="form-group">
+                    <label for="task-title">
+                        <i class="fas fa-heading"></i>
+                        Título de la Tarea
+                    </label>
+                    <input type="text" id="task-title" placeholder="Escribe el título de tu tarea..." required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="task-description">
+                        <i class="fas fa-align-left"></i>
+                        Descripción
+                    </label>
+                    <textarea id="task-description" rows="4" placeholder="Describe los detalles de la tarea..."></textarea>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="task-due-date">
+                            <i class="fas fa-calendar-alt"></i>
+                            Fecha límite
+                        </label>
+                        <input type="datetime-local" id="task-due-date" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="task-priority">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            Prioridad
+                        </label>
+                        <select id="task-priority" required>
+                            <option value="low">🟢 Baja</option>
+                            <option value="medium" selected>🟡 Media</option>
+                            <option value="high">🔴 Alta</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="task-subject">
+                            <i class="fas fa-book"></i>
+                            Asignatura
+                        </label>
+                        <select id="task-subject">
+                            <option value="">📚 Sin asignatura específica</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="task-status">
+                            <i class="fas fa-check-circle"></i>
+                            Estado
+                        </label>
+                        <select id="task-status">
+                            <option value="pendiente">⏳ Pendiente</option>
+                            <option value="en_progreso">🔄 En Progreso</option>
+                            <option value="terminado">✅ Terminado</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline" onclick="closeModal('task-modal')">
+                        <i class="fas fa-times"></i>
+                        Cancelar
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i>
+                        Guardar Tarea
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+                    <button type="submit" class="btn btn-primary">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <!-- FullCalendar JS -->
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
+    
+    <!-- Supabase JS -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <!-- Scripts de la aplicación -->
+    <script src="js/db.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/calendar.js"></script>
+    <script src="js/notes.js"></script>
+    <script src="js/subjects.js"></script>
+    <script src="js/dashboard.js"></script>
+    <script src="js/main.js"></script>
+    
+    <!-- Debug script para testing de eliminación -->
+    <script src="debug-delete.js"></script>
+
+    <!-- Inicializar Calendar Manager -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Inicializando Calendar Manager...');
+            if (typeof CalendarManager !== 'undefined') {
+                window.calendarManager = new CalendarManager();
+                console.log('Calendar Manager inicializado correctamente');
+            } else {
+                console.error('CalendarManager no está definido');
+            }
+        });
+    </script>
+</body>
+</html>

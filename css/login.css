@@ -1,0 +1,604 @@
+/* =================================================================
+   LOGIN PROFESSIONAL STYLES - StudyHub
+   Diseño profesional avanzado para autenticación con
+   características modernas y experiencia de usuario optimizada
+================================================================= */
+
+/* Variables específicas para login */
+:root {
+    --login-gradient-bg: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    --login-secondary-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    --login-accent: #667eea;
+    --login-accent-light: #f8faff;
+    --login-card-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+    --login-card-hover-shadow: 0 30px 80px rgba(0, 0, 0, 0.25);
+    --login-border: rgba(102, 126, 234, 0.2);
+    --login-input-focus: rgba(102, 126, 234, 0.1);
+    
+    /* Animaciones */
+    --login-transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    --login-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+/* Modal de autenticación mejorado */
+#auth-modal {
+    background: linear-gradient(135deg, 
+        rgba(102, 126, 234, 0.9) 0%, 
+        rgba(118, 75, 162, 0.9) 100%);
+    backdrop-filter: blur(20px);
+    transition: var(--login-transition);
+}
+
+#auth-modal .modal-content {
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    padding: 0;
+    max-width: 480px;
+    width: 90%;
+    animation: modalSlideIn 0.6s var(--login-bounce);
+}
+
+/* Contenedor principal del login */
+.auth-container {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(20px);
+    border-radius: 24px;
+    padding: 50px 40px;
+    box-shadow: var(--login-card-shadow);
+    border: 1px solid var(--login-border);
+    position: relative;
+    overflow: hidden;
+    transition: var(--login-transition);
+}
+
+.auth-container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 6px;
+    background: var(--login-gradient-bg);
+    z-index: 1;
+}
+
+.auth-container::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -50%;
+    width: 100%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(102, 126, 234, 0.05) 0%, transparent 70%);
+    z-index: 0;
+    pointer-events: none;
+}
+
+.auth-container:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--login-card-hover-shadow);
+}
+
+/* Header del login mejorado */
+.auth-header {
+    text-align: center;
+    margin-bottom: 40px;
+    position: relative;
+    z-index: 2;
+    animation: fadeInDown 0.8s ease-out;
+}
+
+/* Contenedor del logo con efectos especiales */
+.auth-header .logo {
+    width: 120px;
+    height: 120px;
+    margin: 0 auto 25px;
+    border-radius: 24px;
+    box-shadow: 0 15px 40px rgba(102, 126, 234, 0.4);
+    transition: var(--login-transition);
+    border: 4px solid rgba(255, 255, 255, 0.9);
+    object-fit: contain;
+    background: rgba(255, 255, 255, 0.95);
+    padding: 10px;
+    backdrop-filter: blur(10px);
+    position: relative;
+    display: block;
+}
+
+/* Efecto de brillo alrededor del logo */
+.auth-header .logo::before {
+    content: '';
+    position: absolute;
+    top: -10px;
+    left: -10px;
+    right: -10px;
+    bottom: -10px;
+    background: linear-gradient(45deg, #667eea, #764ba2, #667eea);
+    border-radius: 30px;
+    z-index: -1;
+    opacity: 0;
+    transition: var(--login-transition);
+    animation: logoGlow 3s ease-in-out infinite;
+}
+
+.auth-header .logo:hover {
+    transform: scale(1.05) rotate(2deg);
+    box-shadow: 0 20px 50px rgba(102, 126, 234, 0.5);
+}
+
+.auth-header .logo:hover::before {
+    opacity: 0.7;
+    transform: scale(1.1);
+}
+
+/* Añadir un pequeño efecto de pulsación al logo */
+@keyframes logoGlow {
+    0%, 100% { 
+        opacity: 0;
+        transform: scale(1);
+    }
+    50% { 
+        opacity: 0.3;
+        transform: scale(1.05);
+    }
+}
+
+/* Efecto de presentación del logo */
+@keyframes logoEntrance {
+    0% {
+        opacity: 0;
+        transform: scale(0.5) rotate(-180deg);
+    }
+    50% {
+        opacity: 0.8;
+        transform: scale(1.1) rotate(-90deg);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1) rotate(0deg);
+    }
+}
+
+.auth-header .logo {
+    animation: logoEntrance 1s var(--login-bounce) 0.2s both;
+}
+
+.auth-header h1 {
+    font-size: 2.5rem;
+    font-weight: 800;
+    background: var(--login-gradient-bg);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin: 0 0 10px 0;
+    letter-spacing: -1px;
+}
+
+.auth-header p {
+    color: var(--text-secondary);
+    font-size: 1.1rem;
+    margin: 0;
+    opacity: 0.9;
+    font-weight: 500;
+}
+
+/* Formularios de autenticación */
+.auth-form {
+    position: relative;
+    z-index: 2;
+    animation: fadeInUp 0.8s ease-out;
+}
+
+.auth-form h2 {
+    text-align: center;
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 30px;
+    position: relative;
+}
+
+.auth-form h2::after {
+    content: '';
+    position: absolute;
+    bottom: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60px;
+    height: 4px;
+    background: var(--login-gradient-bg);
+    border-radius: 2px;
+}
+
+/* Grupos de formulario mejorados */
+.auth-form .form-group {
+    position: relative;
+    margin-bottom: 25px;
+    animation: fadeInLeft 0.6s ease-out;
+    animation-fill-mode: both;
+}
+
+.auth-form .form-group:nth-child(1) { animation-delay: 0.1s; }
+.auth-form .form-group:nth-child(2) { animation-delay: 0.2s; }
+.auth-form .form-group:nth-child(3) { animation-delay: 0.3s; }
+.auth-form .form-group:nth-child(4) { animation-delay: 0.4s; }
+.auth-form .form-group:nth-child(5) { animation-delay: 0.5s; }
+.auth-form .form-group:nth-child(6) { animation-delay: 0.6s; }
+
+.auth-form .form-group i {
+    position: absolute;
+    left: 18px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--login-accent);
+    z-index: 3;
+    font-size: 1.1rem;
+    transition: var(--login-transition);
+}
+
+.auth-form .form-group input {
+    width: 100%;
+    padding: 18px 20px 18px 55px;
+    border: 2px solid var(--border-color);
+    border-radius: 16px;
+    font-size: 1rem;
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(10px);
+    transition: var(--login-transition);
+    color: var(--text-primary);
+    font-weight: 500;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+}
+
+.auth-form .form-group input:focus {
+    outline: none;
+    border-color: var(--login-accent);
+    box-shadow: 0 0 0 4px var(--login-input-focus), 
+                0 8px 25px rgba(102, 126, 234, 0.15);
+    background: rgba(255, 255, 255, 0.95);
+    transform: translateY(-2px);
+}
+
+.auth-form .form-group input:focus + i,
+.auth-form .form-group:focus-within i {
+    color: var(--login-accent);
+    transform: translateY(-50%) scale(1.1);
+}
+
+.auth-form .form-group input::placeholder {
+    color: var(--text-secondary);
+    opacity: 0.7;
+    font-weight: 400;
+}
+
+/* Texto de ayuda mejorado */
+.form-help {
+    display: block;
+    margin-top: 8px;
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    opacity: 0.8;
+    font-style: italic;
+    padding-left: 20px;
+}
+
+/* Botones de autenticación mejorados */
+.auth-form .btn {
+    width: 100%;
+    padding: 18px 30px;
+    font-size: 1.1rem;
+    font-weight: 700;
+    border-radius: 16px;
+    background: var(--login-gradient-bg);
+    border: none;
+    color: white;
+    cursor: pointer;
+    transition: var(--login-transition);
+    position: relative;
+    overflow: hidden;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+    margin-top: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+}
+
+.auth-form .btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.6s ease;
+}
+
+.auth-form .btn:hover {
+    transform: translateY(-3px) scale(1.02);
+    box-shadow: 0 15px 40px rgba(102, 126, 234, 0.4);
+}
+
+.auth-form .btn:hover::before {
+    left: 100%;
+}
+
+.auth-form .btn:active {
+    transform: translateY(-1px) scale(0.98);
+}
+
+.auth-form .btn i {
+    font-size: 1.2rem;
+    transition: var(--login-transition);
+}
+
+.auth-form .btn:hover i {
+    transform: scale(1.1);
+}
+
+/* Enlaces de cambio de formulario */
+.auth-switch {
+    text-align: center;
+    margin-top: 30px;
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+    animation: fadeInUp 0.8s ease-out 0.5s both;
+}
+
+.auth-switch a {
+    color: var(--login-accent);
+    text-decoration: none;
+    font-weight: 600;
+    transition: var(--login-transition);
+    position: relative;
+}
+
+.auth-switch a::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    width: 0;
+    height: 2px;
+    background: var(--login-gradient-bg);
+    transition: width 0.3s ease;
+}
+
+.auth-switch a:hover {
+    color: var(--primary-color);
+    transform: translateY(-1px);
+}
+
+.auth-switch a:hover::after {
+    width: 100%;
+}
+
+/* Estados de validación */
+.form-group.error input {
+    border-color: #e74c3c;
+    box-shadow: 0 0 0 4px rgba(231, 76, 60, 0.1);
+    background: rgba(231, 76, 60, 0.05);
+}
+
+.form-group.error i {
+    color: #e74c3c;
+}
+
+.form-group.success input {
+    border-color: #27ae60;
+    box-shadow: 0 0 0 4px rgba(39, 174, 96, 0.1);
+    background: rgba(39, 174, 96, 0.05);
+}
+
+.form-group.success i {
+    color: #27ae60;
+}
+
+/* Indicadores de carga */
+.auth-form .btn.loading {
+    pointer-events: none;
+    opacity: 0.8;
+}
+
+.auth-form .btn.loading i {
+    animation: spin 1s linear infinite;
+}
+
+/* Animaciones */
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-50px) scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@keyframes fadeInDown {
+    from {
+        opacity: 0;
+        transform: translateY(-30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeInLeft {
+    from {
+        opacity: 0;
+        transform: translateX(-30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+}
+
+/* Efectos de partículas (opcional) */
+.auth-container .particles {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.auth-container .particle {
+    position: absolute;
+    width: 4px;
+    height: 4px;
+    background: var(--login-accent);
+    border-radius: 50%;
+    opacity: 0.3;
+    animation: float 6s ease-in-out infinite;
+}
+
+.auth-container .particle:nth-child(1) { left: 10%; animation-delay: 0s; }
+.auth-container .particle:nth-child(2) { left: 20%; animation-delay: 1s; }
+.auth-container .particle:nth-child(3) { left: 30%; animation-delay: 2s; }
+.auth-container .particle:nth-child(4) { left: 40%; animation-delay: 3s; }
+.auth-container .particle:nth-child(5) { left: 50%; animation-delay: 4s; }
+
+@keyframes float {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    50% { transform: translateY(-20px) rotate(180deg); }
+}
+
+/* =================================================================
+   RESPONSIVE DESIGN
+================================================================= */
+
+@media (max-width: 768px) {
+    #auth-modal .modal-content {
+        max-width: 95%;
+        margin: 20px auto;
+    }
+    
+    .auth-container {
+        padding: 40px 30px;
+        margin: 10px;
+        border-radius: 20px;
+    }
+    
+    .auth-header h1 {
+        font-size: 2rem;
+    }
+    
+    .auth-header .logo {
+        width: 100px;
+        height: 100px;
+        border-radius: 20px;
+        padding: 8px;
+    }
+    
+    .auth-form .form-group input {
+        padding: 16px 18px 16px 50px;
+        font-size: 0.95rem;
+    }
+    
+    .auth-form .btn {
+        padding: 16px 25px;
+        font-size: 1rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .auth-container {
+        padding: 30px 20px;
+        border-radius: 16px;
+    }
+    
+    .auth-header h1 {
+        font-size: 1.75rem;
+    }
+    
+    .auth-header .logo {
+        width: 80px;
+        height: 80px;
+        border-radius: 16px;
+        padding: 6px;
+    }
+    
+    .auth-form h2 {
+        font-size: 1.5rem;
+    }
+    
+    .auth-form .form-group {
+        margin-bottom: 20px;
+    }
+    
+    .auth-form .form-group input {
+        padding: 14px 16px 14px 45px;
+        border-radius: 12px;
+    }
+    
+    .auth-form .btn {
+        padding: 14px 20px;
+        border-radius: 12px;
+        font-size: 0.95rem;
+    }
+}
+
+/* =================================================================
+   MODO OSCURO
+================================================================= */
+
+[data-theme="dark"] {
+    --login-gradient-bg: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    --login-border: rgba(102, 126, 234, 0.3);
+    --login-input-focus: rgba(102, 126, 234, 0.15);
+}
+
+[data-theme="dark"] .auth-container {
+    background: rgba(45, 55, 72, 0.95);
+    border-color: var(--login-border);
+}
+
+[data-theme="dark"] .auth-form .form-group input {
+    background: rgba(45, 55, 72, 0.8);
+    border-color: var(--border-color);
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .auth-form .form-group input:focus {
+    background: rgba(45, 55, 72, 0.95);
+}
+
+[data-theme="dark"] .form-group.error input {
+    background: rgba(231, 76, 60, 0.1);
+}
+
+[data-theme="dark"] .form-group.success input {
+    background: rgba(39, 174, 96, 0.1);
+}
