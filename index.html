@@ -45,92 +45,92 @@
     <div id="auth-modal" class="modal active">
         <div class="modal-content">
             <div class="auth-container">
-                <!-- Partículas decorativas -->
-                <div class="particles">
-                    <div class="particle"></div>
-                    <div class="particle"></div>
-                    <div class="particle"></div>
-                    <div class="particle"></div>
-                    <div class="particle"></div>
-                </div>
-                
-                <div class="auth-header">
+                <!-- Lado izquierdo - Logo y branding -->
+                <div class="auth-left">
                     <img src="img/LOGO STUDI.png" alt="StudyHub Logo" class="logo">
                     <h1>StudyHub</h1>
-                    <p>Tu plataforma de gestión académica</p>
+                    <p>Tu plataforma de gestión académica colaborativa</p>
                 </div>
 
-                <!-- Formulario de Login -->
-                <div id="login-form" class="auth-form active">
-                    <h2>Iniciar Sesión</h2>
-                    <form id="loginForm">
-                        <div class="form-group">
-                            <i class="fas fa-user"></i>
-                            <input type="text" id="login-username" placeholder="Usuario o email" required>
-                            <small class="form-help">Ingresa tu usuario o email.</small>
-                        </div>
-                        <div class="form-group">
+                <!-- Lado derecho - Formularios -->
+                <div class="auth-right">
+                    <!-- Formulario de Login -->
+                    <div id="login-form" class="auth-form active">
+                        <h2>Iniciar Sesión</h2>
+                        <p class="subtitle">Accede a tu cuenta</p>
+                        <form id="loginForm">
+                            <div class="form-group">
+                                <i class="fas fa-user"></i>
+                                <input type="text" id="login-username" placeholder="Usuario o email" required>
+                                <small class="form-help">Ingresa tu usuario o email.</small>
+                            </div>
+                            <div class="form-group">
+                                <i class="fas fa-lock"></i>
+                                <input type="password" id="login-password" placeholder="Contraseña" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-sign-in-alt"></i>
+                                Iniciar Sesión
+                            </button>
+                        </form>
+                        <p class="auth-info">
                             <i class="fas fa-lock"></i>
-                            <input type="password" id="login-password" placeholder="Contraseña" required>
-                        </div>
-                        <button type="submit" class="btn btn-primary" style="width:100%;">
-                            <i class="fas fa-sign-in-alt"></i>
-                            Iniciar Sesión
-                        </button>
-                    </form>
-                    <p class="auth-info">
-                        <i class="fas fa-lock"></i>
-                        Acceso solo por invitación
-                    </p>
-                </div>
-
-                <!-- Formulario de Registro -->
-                <div id="register-form" class="auth-form">
-                    <h2>Crear Cuenta</h2>
-                    <div class="invite-notice">
-                        <i class="fas fa-user-friends"></i>
-                        <p>Acceso solo por invitación</p>
+                            StudyHub es un sistema exclusivo por invitación. Si no tienes acceso, contacta a un administrador.
+                        </p>
+                        <p class="auth-switch">
+                            ¿No tienes cuenta? <a href="#" onclick="showRegister()">Crear cuenta</a>
+                        </p>
                     </div>
-                    <form id="registerForm">
-                        <div class="form-group">
-                            <i class="fas fa-ticket-alt"></i>
-                            <input type="text" id="register-invite-code" placeholder="Código de invitación" required>
-                            <small class="form-help">Código proporcionado por quien te invitó</small>
+
+                    <!-- Formulario de Registro -->
+                    <div id="register-form" class="auth-form">
+                        <h2>Crear Cuenta</h2>
+                        <p class="subtitle">Únete a StudyHub</p>
+                        <div class="invite-notice">
+                            <i class="fas fa-user-friends"></i>
+                            <p>Acceso solo por invitación</p>
                         </div>
-                        <div class="form-group">
-                            <i class="fas fa-user"></i>
-                            <input type="text" id="register-name" placeholder="Nombre completo" required>
-                        </div>
-                        <div class="form-group">
-                            <i class="fas fa-envelope"></i>
-                            <input type="email" id="register-email" placeholder="Correo electrónico" required>
-                            <small class="form-help">Para confirmación y notificaciones</small>
-                        </div>
-                        <div class="form-group">
-                            <i class="fas fa-graduation-cap"></i>
-                            <input type="text" id="register-career" placeholder="Carrera" required>
-                        </div>
-                        <div class="form-group">
-                            <i class="fas fa-calendar"></i>
-                            <input type="text" id="register-semester" placeholder="Semestre" required>
-                        </div>
-                        <div class="form-group">
-                            <i class="fas fa-lock"></i>
-                            <input type="password" id="register-password" placeholder="Contraseña" required>
-                        </div>
-                        <div class="form-group">
-                            <i class="fas fa-lock"></i>
-                            <input type="password" id="register-confirm-password" placeholder="Confirmar contraseña" required>
-                        </div>
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-user-plus"></i>
-                            Crear Cuenta
-                        </button>
-                        <small class="form-help">El username lo podrás definir luego en tu perfil.</small>
-                    </form>
-                    <p class="auth-switch">
-                        ¿Ya tienes cuenta? <a href="#" onclick="showLogin()">Inicia sesión aquí</a>
-                    </p>
+                        <form id="registerForm">
+                            <div class="form-group">
+                                <i class="fas fa-ticket-alt"></i>
+                                <input type="text" id="register-invite-code" placeholder="Código de invitación" required>
+                                <small class="form-help">Código proporcionado por quien te invitó</small>
+                            </div>
+                            <div class="form-group">
+                                <i class="fas fa-user"></i>
+                                <input type="text" id="register-name" placeholder="Nombre completo" required>
+                            </div>
+                            <div class="form-group">
+                                <i class="fas fa-envelope"></i>
+                                <input type="email" id="register-email" placeholder="Correo electrónico" required>
+                                <small class="form-help">Para confirmación y notificaciones</small>
+                            </div>
+                            <div class="form-group">
+                                <i class="fas fa-graduation-cap"></i>
+                                <input type="text" id="register-career" placeholder="Carrera" required>
+                            </div>
+                            <div class="form-group">
+                                <i class="fas fa-calendar"></i>
+                                <input type="text" id="register-semester" placeholder="Semestre" required>
+                            </div>
+                            <div class="form-group">
+                                <i class="fas fa-lock"></i>
+                                <input type="password" id="register-password" placeholder="Contraseña" required>
+                            </div>
+                            <div class="form-group">
+                                <i class="fas fa-lock"></i>
+                                <input type="password" id="register-confirm-password" placeholder="Confirmar contraseña" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-user-plus"></i>
+                                Crear Cuenta
+                            </button>
+                            <small class="form-help">El username lo podrás definir luego en tu perfil.</small>
+                        </form>
+                        <p class="auth-switch">
+                            ¿Ya tienes cuenta? <a href="#" onclick="showLogin()">Inicia sesión aquí</a>
+                        </p>
+                    </div>
                 </div>
             </div>
         </div>

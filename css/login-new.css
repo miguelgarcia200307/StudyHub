@@ -76,11 +76,13 @@
 }
 
 .auth-left .logo {
-    width: 240px;
-    height: 240px;
+    width: 200px;
+    height: 200px;
     margin-bottom: 40px;
     border-radius: 20px;
     box-shadow: 0 15px 35px rgba(255, 255, 255, 0.1);
+    background: var(--login-primary);
+    padding: 20px;
     object-fit: contain;
     animation: logoFloat 3s ease-in-out infinite;
 }
@@ -121,8 +123,6 @@
     justify-content: center;
     background: var(--login-primary);
     position: relative;
-    overflow-y: auto;
-    max-height: 100vh;
 }
 
 /* Formularios */
@@ -130,12 +130,6 @@
     width: 100%;
     max-width: 400px;
     margin: 0 auto;
-    flex-shrink: 0;
-}
-
-/* Ajuste especial para formulario de registro */
-#register-form {
-    margin: auto 0;
 }
 
 .auth-form.active {
@@ -179,19 +173,6 @@
 .form-group {
     margin-bottom: 25px;
     position: relative;
-}
-
-/* Reducir espaciado en formulario de registro */
-#register-form .form-group {
-    margin-bottom: 20px;
-}
-
-#register-form .auth-form h2 {
-    margin-bottom: 15px;
-}
-
-#register-form .subtitle {
-    margin-bottom: 25px;
 }
 
 .form-group i {
@@ -301,22 +282,18 @@
 /* Información de autenticación */
 .auth-info {
     text-align: center;
-    margin-top: 25px;
-    padding: 20px;
-    background: rgba(52, 152, 219, 0.1);
-    border: 1px solid rgba(52, 152, 219, 0.2);
-    border-radius: 12px;
-    color: var(--login-accent);
-    font-size: 1rem;
-    font-weight: 600;
-    line-height: 1.5;
+    margin-top: 20px;
+    padding: 15px;
+    background: rgba(149, 165, 166, 0.1);
+    border-radius: 8px;
+    color: var(--login-gray);
+    font-size: 0.9rem;
 }
 
 .auth-info i {
-    margin-right: 10px;
+    margin-right: 8px;
     position: static;
     transform: none;
-    font-size: 1.2rem;
 }
 
 /* Enlaces de cambio */
@@ -368,11 +345,6 @@
     animation: spin 1s linear infinite;
 }
 
-/* Ocultar enlaces de registro para sistema solo por invitación */
-#login-form .auth-switch {
-    display: none;
-}
-
 @keyframes spin {
     from { transform: rotate(0deg); }
     to { transform: rotate(360deg); }
@@ -396,8 +368,8 @@
     }
     
     .auth-left .logo {
-        width: 140px;
-        height: 140px;
+        width: 120px;
+        height: 120px;
         margin-bottom: 20px;
     }
     
@@ -413,19 +385,6 @@
     .auth-right {
         flex: none;
         padding: 40px 30px;
-        justify-content: flex-start;
-        overflow-y: auto;
-        max-height: 60vh;
-    }
-    
-    /* Ajustes especiales para registro en tablet */
-    #register-form .auth-left {
-        height: 25vh;
-    }
-    
-    #register-form .auth-right {
-        max-height: 75vh;
-        padding: 30px;
     }
 }
 
@@ -446,8 +405,8 @@
     }
     
     .auth-left .logo {
-        width: 120px;
-        height: 120px;
+        width: 100px;
+        height: 100px;
     }
     
     .auth-left h1 {
@@ -456,9 +415,6 @@
     
     .auth-right {
         padding: 30px 20px;
-        justify-content: flex-start;
-        overflow-y: auto;
-        max-height: 65vh;
     }
     
     .auth-form h2 {
@@ -467,17 +423,6 @@
     
     .form-group input {
         padding: 16px 18px 16px 45px;
-    }
-    
-    /* Formulario de registro en móvil */
-    #register-form .auth-left {
-        height: 20vh;
-        padding: 20px;
-    }
-    
-    #register-form .auth-right {
-        max-height: 80vh;
-        padding: 20px;
     }
 }
 
@@ -488,8 +433,8 @@
     }
     
     .auth-left .logo {
-        width: 100px;
-        height: 100px;
+        width: 80px;
+        height: 80px;
         margin-bottom: 15px;
     }
     
@@ -503,9 +448,6 @@
     
     .auth-right {
         padding: 20px 15px;
-        justify-content: flex-start;
-        overflow-y: auto;
-        max-height: 70vh;
     }
     
     .auth-form h2 {
@@ -524,20 +466,6 @@
     .auth-form .btn {
         padding: 16px 25px;
         border-radius: 10px;
-    }
-    
-    /* Formulario de registro en móvil pequeño */
-    #register-form .auth-left {
-        height: 20vh;
-    }
-    
-    #register-form .auth-right {
-        max-height: 80vh;
-        padding: 15px;
-    }
-    
-    #register-form .form-group {
-        margin-bottom: 15px;
     }
 }
 

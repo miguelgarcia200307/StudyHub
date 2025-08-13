@@ -844,8 +844,8 @@ class AuthManager {
     generateInvitationLink() {
         if (!this.currentUser) return null;
         
-        // Usar el ID del usuario como código de invitación (más simple)
-        const inviteCode = btoa(this.currentUser.id).replace(/[^a-zA-Z0-9]/g, '');
+        // Usar el ID del usuario como código de invitación
+        const inviteCode = btoa(this.currentUser.id);
         const baseUrl = window.location.origin + window.location.pathname;
         return `${baseUrl}?invite=${inviteCode}`;
     }
@@ -856,6 +856,32 @@ class AuthManager {
             // Decodificar el código para obtener el ID del usuario
             const userId = atob(inviteCode);
             
+            // CÓDIGO TEMPORAL PARA TESTING - Aceptar códigos de prueba
+            if (userId === 'test-user-123' || userId.startsWith('test-')) {
+                console.log('✅ Usando código de prueba:', userId);
+                return { 
+                    valid: true, 
+                    inviter: { 
+                        id: userId, 
+                        nombre: 'Usuario de Prueba', 
+                        email: 'test@studyhub.com' 
+                    } 
+                };
+            }
+
+            // BYPASS TEMPORAL PARA CREAR ADMIN INICIAL
+            if (userId === 'admin-bypass') {
+                console.log('✅ Bypass de admin para usuario inicial');
+                return { 
+                    valid: true, 
+                    inviter: { 
+                        id: 'system', 
+                        nombre: 'Sistema StudyHub', 
+                        email: 'system@studyhub.com' 
+                    } 
+                };
+            }
+            
             // Verificar que el usuario existe en la base de datos
             const { data, error } = await this.supabase
                 .from('usuarios')
@@ -864,12 +890,15 @@ class AuthManager {
                 .single();
                 
             if (error || !data) {
+                console.log('Error buscando usuario:', error);
+                console.log('ID decodificado:', userId);
                 return { valid: false, message: 'Código de invitación inválido' };
             }
             
             return { valid: true, inviter: data };
         } catch (error) {
             console.error('Error validando código de invitación:', error);
+            console.error('Código recibido:', inviteCode);
             return { valid: false, message: 'Código de invitación inválido' };
         }
     }
@@ -886,6 +915,12 @@ class AuthManager {
         } else {
             linkElement.value = 'Error generando enlace';
         }
+    }
+
+    // FUNCIÓN TEMPORAL PARA TESTING - Generar código de invitación válido
+    generateTestInviteCode() {
+        const testUserId = 'test-user-123';
+        return btoa(testUserId);
     }
 }
 
@@ -1144,3 +1179,73 @@ function checkInvitationCodeInURL() {
         window.history.replaceState({}, document.title, newUrl);
     }
 }
+
+// =================================================================
+// FUNCIONES TEMPORALES PARA TESTING
+// =================================================================
+
+// Función global para generar código de invitación de prueba
+window.generateTestInviteCode = function() {
+    const testUserId = 'test-user-123';
+    const inviteCode = btoa(testUserId);
+    const baseUrl = window.location.origin + window.location.pathname;
+    const inviteLink = `${baseUrl}?invite=${inviteCode}`;
+    
+    console.log('🔗 Enlace de invitación de prueba generado:');
+    console.log(inviteLink);
+    console.log('📋 Código de invitación:', inviteCode);
+    
+    return inviteLink;
+};
+
+// Función para probar directamente en la consola
+window.testInvite = function() {
+    const link = window.generateTestInviteCode();
+    console.log('💡 Para probar, copia este enlace en una nueva pestaña:');
+    console.log(link);
+    return link;
+};
+
+// Función para crear usuario admin inicial en producción
+window.createAdminUser = async function() {
+    try {
+        const authManager = window.authManager;
+        if (!authManager) {
+            console.error('AuthManager no disponible');
+            return;
+        }
+
+        // Datos del usuario admin inicial
+        const adminData = {
+            username: 'admin',
+            nombre: 'Administrador StudyHub',
+            email: 'admin@studyhub.com',
+            carrera: 'Sistemas',
+            semestre: 'N/A',
+            password: 'StudyHub2024!'
+        };
+
+        console.log('🔧 Creando usuario administrador inicial...');
+        
+        // Registrar admin sin código de invitación (bypass temporal)
+        const result = await authManager.register(
+            adminData.email,
+            adminData.password,
+            adminData,
+            'admin-bypass'
+        );
+
+        if (result.success) {
+            console.log('✅ Usuario administrador creado exitosamente');
+            console.log('📧 Email:', adminData.email);
+            console.log('🔑 Password:', adminData.password);
+            console.log('🔗 Ahora puedes generar enlaces de invitación');
+        } else {
+            console.error('❌ Error creando administrador:', result.error);
+        }
+
+        return result;
+    } catch (error) {
+        console.error('Error en createAdminUser:', error);
+    }
+};
