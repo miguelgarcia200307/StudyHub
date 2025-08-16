@@ -525,6 +525,48 @@ body {
     text-decoration: underline;
 }
 
+/* Estilos para botones de cambio de formulario */
+.auth-actions {
+    margin-top: 20px;
+    text-align: center;
+}
+
+.btn-register {
+    width: 100%;
+    margin-top: 10px;
+    padding: 12px 20px;
+    font-size: 0.95em;
+    border: 2px solid var(--primary-color);
+    background: transparent;
+    color: var(--primary-color);
+    transition: all 0.3s ease;
+}
+
+.btn-register:hover {
+    background: var(--primary-color);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3);
+}
+
+.btn-login {
+    width: 100%;
+    margin-top: 10px;
+    padding: 12px 20px;
+    font-size: 0.95em;
+    border: 2px solid var(--success-color);
+    background: transparent;
+    color: var(--success-color);
+    transition: all 0.3s ease;
+}
+
+.btn-login:hover {
+    background: var(--success-color);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(39, 174, 96, 0.3);
+}
+
 /* =================================================================
    Formularios
 ================================================================= */
@@ -2003,12 +2045,12 @@ body {
 }
 
 /* =================================================================
-   Estilos para Sistema de Invitación
+   Estilos para Sistema de Colaboración
 ================================================================= */
 
-/* Notificación de acceso por invitación */
-.invite-notice {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+/* Notificación de registro libre */
+.register-notice {
+    background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
     color: white;
     padding: 12px 16px;
     border-radius: var(--border-radius);
@@ -2017,17 +2059,17 @@ body {
     box-shadow: var(--shadow-sm);
 }
 
-.invite-notice i {
+.register-notice i {
     margin-right: 8px;
     font-size: 1.1em;
 }
 
-.invite-notice p {
+.register-notice p {
     margin: 0;
     font-weight: 500;
 }
 
-/* Mensaje de acceso solo por invitación en login */
+/* Mensaje de colaboración en login */
 .auth-info {
     text-align: center;
     color: var(--text-secondary);
@@ -2044,13 +2086,13 @@ body {
     color: var(--primary-color);
 }
 
-/* Sección de invitación en perfil */
+/* Sección de colaboración en perfil */
 .invite-card {
     margin-top: 30px;
 }
 
 .invite-card .card-header {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
     color: white;
     padding: 20px;
     border-radius: var(--border-radius) var(--border-radius) 0 0;
@@ -2072,51 +2114,295 @@ body {
     font-size: 0.95em;
 }
 
-.invite-section {
+/* Información de colaboración */
+.collaboration-info {
     padding: 20px;
 }
 
-.invite-section label {
-    display: block;
-    margin-bottom: 8px;
-    font-weight: 600;
-    color: var(--text-primary);
-}
-
-.invite-link-container {
+.info-item {
     display: flex;
-    gap: 10px;
-    margin-bottom: 10px;
+    align-items: flex-start;
+    gap: 15px;
+    padding: 15px 0;
+    border-bottom: 1px solid var(--border-light);
 }
 
-.invite-link-container input {
+.info-item:last-child {
+    border-bottom: none;
+}
+
+.info-item i {
+    font-size: 1.2em;
+    color: var(--primary-color);
+    margin-top: 3px;
+    min-width: 20px;
+}
+
+.info-item div {
     flex: 1;
-    padding: 12px 16px;
-    border: 2px solid var(--border-color);
-    border-radius: var(--border-radius);
-    background: var(--bg-secondary);
+}
+
+.info-item strong {
+    display: block;
     color: var(--text-primary);
-    font-family: 'Courier New', monospace;
+    margin-bottom: 4px;
+    font-size: 1em;
+}
+
+.info-item p {
+    margin: 0;
+    color: var(--text-secondary);
     font-size: 0.9em;
-    cursor: text;
+    line-height: 1.4;
 }
 
-.invite-link-container input:focus {
-    outline: none;
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+/* Acciones de colaboración */
+.collaboration-actions {
+    padding: 0 20px 20px;
+    text-align: center;
 }
 
-.invite-link-container .btn {
-    white-space: nowrap;
-    min-width: 100px;
+.collaboration-actions .btn {
+    min-width: 200px;
 }
 
-/* Efecto de copiado exitoso */
+/* Efectos y animaciones de colaboración */
 .copy-success {
     background: rgba(39, 174, 96, 0.1) !important;
     border-color: #27ae60 !important;
     animation: copyPulse 0.6s ease;
+}
+
+/* =================================================================
+   Modal de Gestión de Colaboradores
+================================================================= */
+
+/* Lista de colaboradores */
+.collaborators-list {
+    max-height: 300px;
+    overflow-y: auto;
+    margin-top: 15px;
+}
+
+.collaborator-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px;
+    border: 1px solid var(--border-light);
+    border-radius: var(--border-radius);
+    margin-bottom: 10px;
+    background: var(--bg-primary);
+    transition: all 0.3s ease;
+}
+
+.collaborator-item:hover {
+    box-shadow: var(--shadow-sm);
+    border-color: var(--border-color);
+}
+
+.collaborator-info {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    flex: 1;
+}
+
+.collaborator-avatar {
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.2em;
+}
+
+.collaborator-details h4 {
+    margin: 0 0 4px 0;
+    font-size: 1em;
+    color: var(--text-primary);
+}
+
+.collaborator-details p {
+    margin: 0 0 6px 0;
+    font-size: 0.85em;
+    color: var(--text-secondary);
+}
+
+.role-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.75em;
+    font-weight: 500;
+    text-transform: uppercase;
+}
+
+.role-badge.propietario {
+    background: rgba(231, 76, 60, 0.1);
+    color: #e74c3c;
+    border: 1px solid rgba(231, 76, 60, 0.3);
+}
+
+.role-badge.colaborador {
+    background: rgba(52, 152, 219, 0.1);
+    color: #3498db;
+    border: 1px solid rgba(52, 152, 219, 0.3);
+}
+
+.collaborator-actions {
+    display: flex;
+    gap: 8px;
+}
+
+/* Lista de invitaciones pendientes */
+.pending-invitations-section {
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border-light);
+}
+
+.pending-invitations-list {
+    max-height: 200px;
+    overflow-y: auto;
+    margin-top: 15px;
+}
+
+.pending-invitation-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 15px;
+    border: 1px solid var(--border-light);
+    border-radius: var(--border-radius);
+    margin-bottom: 10px;
+    background: rgba(255, 193, 7, 0.05);
+    border-left: 4px solid #ffc107;
+}
+
+.invitation-info {
+    flex: 1;
+}
+
+.invitation-target {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 5px;
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.invitation-date {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.85em;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+}
+
+.invitation-message {
+    font-style: italic;
+    color: var(--text-secondary);
+    font-size: 0.9em;
+    margin-top: 8px;
+    padding: 8px;
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 4px;
+}
+
+.invitation-actions {
+    display: flex;
+    gap: 8px;
+    margin-left: 15px;
+}
+
+/* Estado vacío */
+.empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text-secondary);
+}
+
+.empty-state i {
+    font-size: 3em;
+    margin-bottom: 15px;
+    opacity: 0.5;
+}
+
+.empty-state p {
+    margin: 0;
+    font-size: 1.1em;
+}
+
+/* Formulario de invitación */
+.invite-section {
+    margin-bottom: 30px;
+    padding: 20px;
+    background: var(--bg-secondary);
+    border-radius: var(--border-radius);
+    border: 1px solid var(--border-light);
+}
+
+.invite-section h5 {
+    margin: 0 0 15px 0;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Modal de confirmación de invitación */
+#subject-invitation-modal .modal-content {
+    max-width: 500px;
+}
+
+.invitation-details {
+    margin: 20px 0;
+}
+
+.subject-card {
+    border: 1px solid var(--border-light);
+    border-radius: var(--border-radius);
+    overflow: hidden;
+    background: var(--bg-primary);
+}
+
+.subject-header {
+    padding: 15px;
+    color: white;
+    text-align: center;
+}
+
+.subject-header h4 {
+    margin: 0;
+    font-size: 1.2em;
+    font-weight: 600;
+}
+
+.subject-info {
+    padding: 15px;
+}
+
+.subject-info p {
+    margin: 8px 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--text-secondary);
+}
+
+.subject-info p i {
+    width: 16px;
+    color: var(--primary-color);
+}
+
+.subject-info strong {
+    color: var(--text-primary);
 }
 
 @keyframes copyPulse {

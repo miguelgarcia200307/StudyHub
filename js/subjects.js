@@ -10,6 +10,75 @@ class SubjectsManager {
         this.subjectsData = [];
         this.setupEventListeners();
         this.setupProfessionalFeatures();
+        // Asegurar que el botón usar código esté disponible
+        this.initUseCodeButton();
+    }
+
+    // Función dedicada para inicializar el botón usar código
+    initUseCodeButton() {
+        // Esperar un poco para que el DOM esté listo
+        setTimeout(() => {
+            console.log('🔧 Inicializando botón usar código...');
+            // Prefer the global top header button if present (added to ensure visibility)
+            let useCodeBtn = document.getElementById('use-access-code-topbtn') || document.getElementById('use-access-code-btn');
+            
+            if (useCodeBtn) {
+                console.log('✅ Botón usar código encontrado, configurando evento');
+                // Remover event listeners anteriores
+                const newBtn = useCodeBtn.cloneNode(true);
+                useCodeBtn.parentNode.replaceChild(newBtn, useCodeBtn);
+                
+                newBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    console.log('🔑 Click en botón usar código');
+                    this.showAccessCodeModal();
+                });
+            } else {
+                console.log('❌ Botón usar código no encontrado, creando...');
+                this.createUseCodeButton();
+            }
+        }, 200);
+        
+        // Intentar varias veces por si el DOM aún no está listo
+        setTimeout(() => this.ensureUseCodeButton(), 1000);
+        setTimeout(() => this.ensureUseCodeButton(), 2000);
+    }
+    
+    // Asegurar que el botón esté presente
+    ensureUseCodeButton() {
+        const useCodeBtn = document.getElementById('use-access-code-btn');
+        if (!useCodeBtn) {
+            console.log('🔄 Reintentando crear botón usar código...');
+            this.createUseCodeButton();
+        }
+    }
+
+    // Crear el botón si no existe
+    createUseCodeButton() {
+        const headerActions = document.querySelector('.header-actions');
+        if (headerActions && !document.getElementById('use-access-code-btn')) {
+            console.log('🔧 Creando botón usar código...');
+            const useCodeBtn = document.createElement('button');
+            useCodeBtn.id = 'use-access-code-btn';
+            useCodeBtn.className = 'btn btn-outline';
+            useCodeBtn.innerHTML = '<i class="fas fa-key"></i> Usar Código';
+            
+            useCodeBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                console.log('🔑 Click en botón usar código (creado)');
+                this.showAccessCodeModal();
+            });
+            
+            // Insertar antes del botón "Nueva Asignatura"
+            const addBtn = document.getElementById('add-subject-btn');
+            if (addBtn) {
+                headerActions.insertBefore(useCodeBtn, addBtn);
+            } else {
+                headerActions.appendChild(useCodeBtn);
+            }
+            
+            console.log('✅ Botón usar código creado y agregado');
+        }
     }
 
     // Configurar características profesionales
@@ -110,6 +179,90 @@ class SubjectsManager {
     setupEventListeners() {
         // Configurar los event listeners después de que se haya creado el DOM
         setTimeout(() => {
+            // Botón para agregar asignatura
+            let addSubjectBtn = document.getElementById('add-subject-btn');
+            if (!addSubjectBtn) {
+                // Buscar en el header que creamos
+                const headerBtn = document.querySelector('.subjects-controls #add-subject-btn');
+                if (headerBtn) {
+                    addSubjectBtn = headerBtn;
+                }
+            }
+            
+            if (addSubjectBtn) {
+                // Remover listeners anteriores
+                const newBtn = addSubjectBtn.cloneNode(true);
+                addSubjectBtn.parentNode.replaceChild(newBtn, addSubjectBtn);
+                
+                newBtn.addEventListener('click', () => {
+                    this.showSubjectModal();
+                });
+            }
+
+            // Botón para usar código de acceso
+            const useCodeBtn = document.getElementById('use-access-code-btn');
+            console.log('Buscando botón use-access-code-btn:', useCodeBtn);
+            if (useCodeBtn) {
+                console.log('Botón encontrado, agregando event listener');
+                useCodeBtn.addEventListener('click', () => {
+                    console.log('Click en botón usar código');
+                    this.showAccessCodeModal();
+                });
+            } else {
+                console.error('No se encontró el botón use-access-code-btn');
+                // Crear botón como fallback
+                this.createUseCodeButton();
+            }
+
+            // Formulario de asignatura
+            const subjectForm = document.getElementById('subject-form');
+            if (subjectForm) {
+                subjectForm.addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    this.handleSubjectSubmit();
+                });
+            }
+            
+            // Modal close buttons
+            const modalCloseButtons = document.querySelectorAll('#subject-modal .modal-close, #subject-modal .btn-outline');
+            modalCloseButtons.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    this.closeSubjectModal();
+                });
+            });
+        }, 100);
+    }
+
+    // Crear botón de usar código si no existe
+    createUseCodeButton() {
+        const headerActions = document.querySelector('.header-actions');
+        if (headerActions && !document.getElementById('use-access-code-btn')) {
+            console.log('Creando botón usar código');
+            const useCodeBtn = document.createElement('button');
+            useCodeBtn.id = 'use-access-code-btn';
+            useCodeBtn.className = 'btn btn-outline';
+            useCodeBtn.innerHTML = '<i class="fas fa-key"></i> Usar Código';
+            
+            useCodeBtn.addEventListener('click', () => {
+                console.log('Click en botón usar código');
+                this.showAccessCodeModal();
+            });
+            
+            // Insertar antes del botón "Nueva Asignatura"
+            const addBtn = document.getElementById('add-subject-btn');
+            if (addBtn) {
+                headerActions.insertBefore(useCodeBtn, addBtn);
+            } else {
+                headerActions.appendChild(useCodeBtn);
+            }
+        }
+    }
+
+    // Configurar event listeners principales
+    setupEventListeners() {
+        setTimeout(() => {
+            console.log('Configurando event listeners principales...');
+            
             // Botón para agregar asignatura
             let addSubjectBtn = document.getElementById('add-subject-btn');
             if (!addSubjectBtn) {
@@ -421,6 +574,10 @@ class SubjectsManager {
                         <i class="fas fa-edit"></i>
                         Editar
                     </button>
+                    <button class="action-btn collaborators" onclick="event.stopPropagation(); window.subjectsManager.showCollaboratorsModal(${JSON.stringify(subject).replace(/"/g, '&quot;')})">
+                        <i class="fas fa-users"></i>
+                        Colaboradores
+                    </button>
                     <button class="action-btn delete-subject" onclick="event.stopPropagation(); window.subjectsManager.deleteSubject('${subject.id}')">
                         <i class="fas fa-trash-alt"></i>
                         Eliminar
@@ -673,6 +830,397 @@ class SubjectsManager {
             window.authManager.showErrorMessage('Error al eliminar la asignatura');
         }
     }
+
+    // ===================================================================
+    // FUNCIONES DE COLABORADORES
+    // ===================================================================
+
+    // Mostrar modal para gestionar colaboradores
+    async showCollaboratorsModal(subject) {
+        if (!subject || !window.dbManager) return;
+        
+        this.currentSubject = subject;
+        
+        try {
+            // Actualizar información de la asignatura
+            document.getElementById('collab-subject-name').textContent = subject.nombre;
+            document.getElementById('collab-subject-details').textContent = 
+                `${subject.profesor} • ${subject.horario}`;
+            
+            // Cargar colaboradores actuales
+            await this.loadCollaborators(subject.id);
+            
+            // Configurar botón de generar código
+            this.setupGenerateCodeButton(subject.id);
+            
+            // Mostrar modal
+            const modal = document.getElementById('collaborators-modal');
+            modal.classList.add('active');
+            
+        } catch (error) {
+            console.error('Error al cargar datos de colaboración:', error);
+            if (window.authManager) {
+                window.authManager.showErrorMessage('Error al cargar información de colaboradores');
+            }
+        }
+    }
+
+    // Cargar lista de colaboradores
+    async loadCollaborators(subjectId) {
+        try {
+            const collaborators = await window.dbManager.getSubjectCollaborators(subjectId);
+            this.renderCollaboratorsList(collaborators);
+            
+            // Cargar códigos de acceso activos
+            const activeCodes = await window.dbManager.getActiveAccessCodes(subjectId);
+            this.renderActiveCodes(activeCodes);
+            
+        } catch (error) {
+            console.error('Error al cargar colaboradores:', error);
+        }
+    }
+
+    // Renderizar lista de colaboradores
+    renderCollaboratorsList(collaborators) {
+        const container = document.getElementById('collaborators-list');
+        
+        if (!collaborators || collaborators.length === 0) {
+            container.innerHTML = `
+                <div class="empty-state">
+                    <i class="fas fa-users"></i>
+                    <p>No hay colaboradores en esta asignatura</p>
+                </div>
+            `;
+            return;
+        }
+
+        container.innerHTML = collaborators.map(collaborator => `
+            <div class="collaborator-item">
+                <div class="collaborator-info">
+                    <div class="collaborator-avatar">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div class="collaborator-details">
+                        <h4>${collaborator.name}</h4>
+                        <p>@${collaborator.username || 'usuario'} • ${collaborator.email}</p>
+                        <span class="role-badge ${collaborator.role}">${collaborator.role === 'propietario' ? 'Propietario' : 'Colaborador'}</span>
+                    </div>
+                </div>
+                ${collaborator.role !== 'propietario' ? `
+                    <div class="collaborator-actions">
+                        <button type="button" class="btn btn-sm btn-outline btn-danger" 
+                                onclick="window.subjectsManager.removeCollaborator('${collaborator.id}', '${collaborator.name}')">
+                            <i class="fas fa-times"></i>
+                            Remover
+                        </button>
+                    </div>
+                ` : ''}
+            </div>
+        `).join('');
+    }
+
+    // Renderizar códigos de acceso activos
+    renderActiveCodes(codes) {
+        const container = document.getElementById('active-codes-list');
+        
+        if (!codes || codes.length === 0) {
+            container.innerHTML = `
+                <div class="empty-state">
+                    <i class="fas fa-key"></i>
+                    <p>No hay códigos de acceso activos</p>
+                    <small>Genera un código para permitir que otros se unan</small>
+                </div>
+            `;
+            return;
+        }
+
+        container.innerHTML = codes.map(code => {
+            const expirationDate = new Date(code.fecha_expiracion);
+            const now = new Date();
+            const daysLeft = Math.ceil((expirationDate - now) / (1000 * 60 * 60 * 24));
+            
+            return `
+                <div class="active-code-item">
+                    <div class="code-info">
+                        <div class="code-header">
+                            <span class="code-text">${code.codigo_invitacion}</span>
+                            <button type="button" class="btn btn-sm btn-outline" onclick="copyToClipboard('${code.codigo_invitacion}')">
+                                <i class="fas fa-copy"></i>
+                                Copiar
+                            </button>
+                        </div>
+                        <div class="code-details">
+                            <span class="code-expiry ${daysLeft <= 1 ? 'expiring' : ''}">
+                                <i class="fas fa-clock"></i>
+                                ${daysLeft > 0 ? `Expira en ${daysLeft} día${daysLeft > 1 ? 's' : ''}` : 'Expirado'}
+                            </span>
+                            ${code.mensaje ? `<span class="code-message">"${code.mensaje}"</span>` : ''}
+                        </div>
+                    </div>
+                    <div class="code-actions">
+                        <button type="button" class="btn btn-sm btn-outline btn-danger" 
+                                onclick="window.subjectsManager.cancelAccessCode('${code.id}')">
+                            <i class="fas fa-times"></i>
+                            Cancelar
+                        </button>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    // Copiar link de invitación
+    copyInvitationLink(invitationCode) {
+        if (window.copySubjectInvitationLink) {
+            window.copySubjectInvitationLink(invitationCode);
+        }
+    }
+
+    // Remover colaborador
+    async removeCollaborator(collaboratorId, collaboratorName) {
+        if (!window.confirm(`¿Estás seguro de que quieres remover a ${collaboratorName} de esta asignatura?`)) {
+            return;
+        }
+
+        try {
+            const result = await window.dbManager.removeSubjectCollaborator(collaboratorId, this.currentSubject.id);
+            
+            if (result.success) {
+                if (window.authManager) {
+                    window.authManager.showSuccessMessage(result.message);
+                }
+                
+                // Recargar colaboradores
+                await this.loadCollaborators(this.currentSubject.id);
+                
+            } else {
+                if (window.authManager) {
+                    window.authManager.showErrorMessage(result.error);
+                }
+            }
+            
+        } catch (error) {
+            console.error('Error al remover colaborador:', error);
+            if (window.authManager) {
+                window.authManager.showErrorMessage('Error al remover colaborador');
+            }
+        }
+    }
+
+    // Cancelar invitación
+    async cancelInvitation(invitationId) {
+        if (!window.confirm('¿Estás seguro de que quieres cancelar esta invitación?')) {
+            return;
+        }
+
+        try {
+            const result = await window.dbManager.cancelSubjectInvitation(invitationId);
+            
+            if (result.success) {
+                if (window.authManager) {
+                    window.authManager.showSuccessMessage(result.message);
+                }
+                
+                // Recargar invitaciones pendientes
+                await this.loadCollaborators(this.currentSubject.id);
+                
+            } else {
+                if (window.authManager) {
+                    window.authManager.showErrorMessage(result.error);
+                }
+            }
+            
+        } catch (error) {
+            console.error('Error al cancelar invitación:', error);
+            if (window.authManager) {
+                window.authManager.showErrorMessage('Error al cancelar invitación');
+            }
+        }
+    }
+
+    // Cancelar código de acceso
+    async cancelAccessCode(codeId) {
+        if (!window.confirm('¿Estás seguro de que quieres cancelar este código de acceso?')) {
+            return;
+        }
+
+        try {
+            const result = await window.dbManager.cancelSubjectInvitation(codeId);
+            
+            if (result.success) {
+                if (window.authManager) {
+                    window.authManager.showSuccessMessage('Código de acceso cancelado');
+                }
+                
+                // Recargar códigos activos
+                await this.loadCollaborators(this.currentSubject.id);
+                
+            } else {
+                if (window.authManager) {
+                    window.authManager.showErrorMessage(result.error);
+                }
+            }
+            
+        } catch (error) {
+            console.error('Error al cancelar código:', error);
+            if (window.authManager) {
+                window.authManager.showErrorMessage('Error al cancelar código');
+            }
+        }
+    }
+
+    // ===================================================================
+    // FUNCIONES DE CÓDIGOS DE ACCESO
+    // ===================================================================
+
+    // Mostrar modal para usar código de acceso
+    showAccessCodeModal() {
+        console.log('🔑 Abriendo modal de código de acceso...');
+        const modal = document.getElementById('access-code-modal');
+        console.log('Modal encontrado:', modal);
+        
+        if (modal) {
+            // Limpiar formulario
+            const input = document.getElementById('access-code-input');
+            if (input) {
+                input.value = '';
+                console.log('Formulario limpiado');
+            }
+            
+            // Configurar evento del formulario
+            const form = document.getElementById('use-access-code-form');
+            if (form) {
+                console.log('Configurando evento del formulario');
+                const newForm = form.cloneNode(true);
+                form.parentNode.replaceChild(newForm, form);
+                
+                newForm.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    console.log('Submit del formulario de código de acceso');
+                    await this.handleUseAccessCode();
+                });
+            }
+            
+            modal.classList.add('active');
+            console.log('Modal activado');
+            
+            setTimeout(() => {
+                if (input) {
+                    input.focus();
+                    console.log('Focus establecido en input');
+                }
+            }, 100);
+        } else {
+            console.error('No se encontró el modal access-code-modal');
+        }
+    }
+
+    // Manejar uso de código de acceso
+    async handleUseAccessCode() {
+        const codeInput = document.getElementById('access-code-input');
+        const button = document.querySelector('#use-access-code-form .btn-primary');
+        const code = codeInput.value.trim().toUpperCase();
+
+        if (!code) {
+            if (window.authManager) {
+                window.authManager.showErrorMessage('Por favor ingresa un código de acceso');
+            }
+            return;
+        }
+
+        // Validar formato básico (aceptar con o sin guion)
+        const normalizedCode = code.replace(/-/g, '');
+        if (!/^[A-Z0-9]{8}$/.test(normalizedCode)) {
+            if (window.authManager) {
+                window.authManager.showErrorMessage('El código debe tener 8 caracteres alfanuméricos');
+            }
+            return;
+        }
+
+        try {
+            window.loadingManager.showButtonLoading(button);
+
+            const result = await window.dbManager.useAccessCode(code);
+
+            if (result.success) {
+                if (window.authManager) {
+                    window.authManager.showSuccessMessage(result.message);
+                }
+                
+                // Cerrar modal
+                closeModal('access-code-modal');
+                
+                // Recargar asignaturas para mostrar la nueva
+                await this.loadSubjects();
+                
+            } else {
+                if (window.authManager) {
+                    window.authManager.showErrorMessage(result.error);
+                }
+            }
+
+        } catch (error) {
+            console.error('Error usando código de acceso:', error);
+            if (window.authManager) {
+                window.authManager.showErrorMessage('Error al procesar el código de acceso');
+            }
+        } finally {
+            window.loadingManager.hideButtonLoading(button);
+        }
+    }
+
+    // Generar código de acceso para asignatura
+    async generateAccessCode(subjectId) {
+        const message = document.getElementById('access-code-message').value.trim();
+        const days = parseInt(document.getElementById('access-code-days').value);
+        const button = document.getElementById('generate-access-code-btn');
+
+        try {
+            window.loadingManager.showButtonLoading(button);
+
+            const result = await window.dbManager.createSubjectAccessCode(subjectId, message, days);
+
+            if (result.success) {
+                // Mostrar el código generado
+                document.getElementById('access-code-value').textContent = result.accessCode;
+                document.getElementById('generated-code-section').style.display = 'block';
+                
+                if (window.authManager) {
+                    window.authManager.showSuccessMessage(result.message);
+                }
+                
+                // Recargar invitaciones pendientes
+                await this.loadCollaborators(subjectId);
+                
+            } else {
+                if (window.authManager) {
+                    window.authManager.showErrorMessage(result.error);
+                }
+            }
+
+        } catch (error) {
+            console.error('Error generando código de acceso:', error);
+            if (window.authManager) {
+                window.authManager.showErrorMessage('Error al generar código de acceso');
+            }
+        } finally {
+            window.loadingManager.hideButtonLoading(button);
+        }
+    }
+
+    // Configurar botón de generar código
+    setupGenerateCodeButton(subjectId) {
+        const generateBtn = document.getElementById('generate-access-code-btn');
+        if (generateBtn) {
+            // Remover listeners previos
+            const newBtn = generateBtn.cloneNode(true);
+            generateBtn.parentNode.replaceChild(newBtn, generateBtn);
+            
+            newBtn.addEventListener('click', () => {
+                this.generateAccessCode(subjectId);
+            });
+        }
+    }
 }
 
 // Función global para cerrar modales
@@ -686,6 +1234,43 @@ function closeModal(modalId) {
     if (modalId === 'subject-modal' && window.subjectsManager) {
         window.subjectsManager.closeSubjectModal();
     }
+}
+
+// Función global para cerrar modal de colaboradores
+function closeCollaboratorsModal() {
+    closeModal('collaborators-modal');
+}
+
+// Función global para copiar código de acceso
+function copyAccessCode() {
+    const codeElement = document.getElementById('access-code-value');
+    if (codeElement) {
+        const code = codeElement.textContent;
+        navigator.clipboard.writeText(code).then(() => {
+            if (window.authManager) {
+                window.authManager.showSuccessMessage('Código copiado al portapapeles');
+            }
+        }).catch(err => {
+            console.error('Error copiando código:', err);
+            if (window.authManager) {
+                window.authManager.showErrorMessage('Error al copiar código');
+            }
+        });
+    }
+}
+
+// Función global para copiar cualquier texto al portapapeles
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text).then(() => {
+        if (window.authManager) {
+            window.authManager.showSuccessMessage('Código copiado al portapapeles');
+        }
+    }).catch(err => {
+        console.error('Error copiando al portapapeles:', err);
+        if (window.authManager) {
+            window.authManager.showErrorMessage('Error al copiar');
+        }
+    });
 }
 
 // Inicializar gestor de asignaturas

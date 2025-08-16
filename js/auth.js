@@ -363,8 +363,8 @@ class AuthManager {
                     }
                 }
 
-                // Actualizar link de invitación en el perfil
-                this.updateInvitationLink();
+                // TODO: Actualizar link de invitación en el perfil si es necesario
+                // this.updateInvitationLink();
                 
             } else {
                 console.log('No se encontró perfil para el usuario actual');
@@ -395,11 +395,19 @@ class AuthManager {
         // Limpiar información del usuario
         const userNameEl = document.getElementById('user-name');
         const userEmailEl = document.getElementById('user-email');
-        const userAvatarEl = document.getElementById('user-avatar');
+        const userAvatarContainer = document.getElementById('user-avatar-container');
         
         if (userNameEl) userNameEl.textContent = 'Usuario';
         if (userEmailEl) userEmailEl.textContent = 'email@ejemplo.com';
-        if (userAvatarEl) userAvatarEl.src = 'img/default-avatar.png';
+        if (userAvatarContainer) {
+            userAvatarContainer.innerHTML = `
+                <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="16" cy="16" r="16" fill="#667eea"/>
+                    <circle cx="16" cy="12" r="5" fill="white"/>
+                    <path d="M6 26c0-5.5 4.5-10 10-10s10 4.5 10 10" fill="white"/>
+                </svg>
+            `;
+        }
 
         // Limpiar formulario de perfil
         const profileForm = document.getElementById('profile-form');
@@ -431,20 +439,10 @@ class AuthManager {
         }
     }
 
-    // Registro de usuario con validación de invitación
-    async register(email, password, userData, inviteCode) {
+    // Registro de usuario público (sin código de invitación)
+    async register(email, password, userData) {
         if (!this.supabase) {
             return { success: false, error: 'Supabase no está configurado' };
-        }
-
-        // VALIDAR CÓDIGO DE INVITACIÓN PRIMERO
-        if (!inviteCode) {
-            return { success: false, error: 'Código de invitación requerido' };
-        }
-
-        const invitationValidation = await this.validateInvitationCode(inviteCode);
-        if (!invitationValidation.valid) {
-            return { success: false, error: invitationValidation.message };
         }
 
         try {
@@ -453,16 +451,19 @@ class AuthManager {
             if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(cleanEmail)) {
                 return { success: false, error: 'Email inválido' };
             }
+            
             // Verificar si ya hay perfil (confirmado previamente)
             const { data: existingProfile } = await this.supabase
                 .from('usuarios')
                 .select('id')
                 .ilike('email', cleanEmail)
                 .maybeSingle();
+            
             if (existingProfile) {
                 return { success: false, error: 'Este email ya está registrado. Inicia sesión.' };
             }
-            // Intentar signUp con metadata adicional
+            
+            // Registro público - sin validación de invitación
             const { data, error } = await this.supabase.auth.signUp({
                 email: cleanEmail,
                 password,
@@ -471,36 +472,40 @@ class AuthManager {
                         nombre: userData.nombre,
                         carrera: userData.carrera,
                         semestre: userData.semestre,
-                        invited_by: invitationValidation.inviter.id // Guardar quién invitó
+                        username: userData.username || null
                     },
                     emailRedirectTo: window.location.origin
                 }
             });
+            
             if (error) {
                 const msg = (error.message || '').toLowerCase();
                 if (msg.includes('already registered') || msg.includes('already exists')) {
-                    // Confirmado previamente
                     try {
-                        await this.resendConfirmationEmail(cleanEmail); // opcional: reenvío por si el usuario lo necesita
+                        await this.resendConfirmationEmail(cleanEmail);
                     } catch (_) { /* ignorar */ }
                     return { success: false, error: 'Email ya registrado y confirmado. Inicia sesión.' };
                 }
                 return { success: false, error: error.message };
             }
-            // CASO: Supabase devuelve user sin confirmar (esto ocurre tanto para NUEVO como para YA PENDIENTE)
+            
             if (data?.user && !data.user.email_confirmed_at) {
-                // Intentamos reenviar siempre: si era nuevo, ya se envió; si era pendiente, se reenvía.
-                try { await this.resendConfirmationEmail(cleanEmail); } catch (_) { /* ignorar */ }
+                try { 
+                    await this.resendConfirmationEmail(cleanEmail); 
+                } catch (_) { /* ignorar */ }
                 return { 
                     success: true,
                     needsConfirmation: true,
-                    message: 'Hemos enviado (o reenviado) el correo de verificación. Revisa tu bandeja y confirma tu cuenta.'
+                    message: 'Registro exitoso. Revisa tu email para confirmar tu cuenta.'
                 };
             }
+            
             if (data?.user?.email_confirmed_at) {
                 return { success: true, message: 'Usuario registrado y confirmado.' };
             }
+            
             return { success: true, needsConfirmation: true, message: 'Revisa tu email y confirma tu cuenta.' };
+            
         } catch (e) {
             return { success: false, error: e.message };
         }
@@ -837,90 +842,85 @@ class AuthManager {
     }
 
     // =================================================================
-    // SISTEMA DE ACCESO POR INVITACIÓN
+    // FUNCIONES DE GESTIÓN DE INVITACIONES A ASIGNATURAS
     // =================================================================
 
-    // Generar link de invitación para el usuario actual
-    generateInvitationLink() {
-        if (!this.currentUser) return null;
-        
-        // Usar el ID del usuario como código de invitación
-        const inviteCode = btoa(this.currentUser.id);
-        const baseUrl = window.location.origin + window.location.pathname;
-        return `${baseUrl}?invite=${inviteCode}`;
-    }
+    // Crear invitación a asignatura
+    async createSubjectInvitation(subjectId, targetIdentifier, message = null) {
+        if (!this.supabase || !this.currentUser) {
+            return { success: false, error: 'Usuario no autenticado' };
+        }
 
-    // Validar código de invitación
-    async validateInvitationCode(inviteCode) {
         try {
-            // Decodificar el código para obtener el ID del usuario
-            const userId = atob(inviteCode);
-            
-            // CÓDIGO TEMPORAL PARA TESTING - Aceptar códigos de prueba
-            if (userId === 'test-user-123' || userId.startsWith('test-')) {
-                console.log('✅ Usando código de prueba:', userId);
-                return { 
-                    valid: true, 
-                    inviter: { 
-                        id: userId, 
-                        nombre: 'Usuario de Prueba', 
-                        email: 'test@studyhub.com' 
-                    } 
-                };
-            }
+            const { data, error } = await this.supabase.rpc('create_subject_invitation', {
+                subject_id: subjectId,
+                inviter_id: this.currentUser.id,
+                target_identifier: targetIdentifier,
+                invitation_message: message
+            });
 
-            // BYPASS TEMPORAL PARA CREAR ADMIN INICIAL
-            if (userId === 'admin-bypass') {
-                console.log('✅ Bypass de admin para usuario inicial');
-                return { 
-                    valid: true, 
-                    inviter: { 
-                        id: 'system', 
-                        nombre: 'Sistema StudyHub', 
-                        email: 'system@studyhub.com' 
-                    } 
+            if (error) throw error;
+
+            const result = typeof data === 'string' ? JSON.parse(data) : data;
+            
+            if (result.success) {
+                const inviteLink = `${window.location.origin}?invite=${result.invitation_code}`;
+                return {
+                    success: true,
+                    invitationCode: result.invitation_code,
+                    inviteLink: inviteLink,
+                    targetType: result.target_type
                 };
+            } else {
+                return { success: false, error: result.error };
             }
-            
-            // Verificar que el usuario existe en la base de datos
-            const { data, error } = await this.supabase
-                .from('usuarios')
-                .select('id, nombre, email')
-                .eq('id', userId)
-                .single();
-                
-            if (error || !data) {
-                console.log('Error buscando usuario:', error);
-                console.log('ID decodificado:', userId);
-                return { valid: false, message: 'Código de invitación inválido' };
-            }
-            
-            return { valid: true, inviter: data };
         } catch (error) {
-            console.error('Error validando código de invitación:', error);
-            console.error('Código recibido:', inviteCode);
-            return { valid: false, message: 'Código de invitación inválido' };
+            console.error('Error creando invitación:', error);
+            return { success: false, error: error.message };
         }
     }
 
-    // Actualizar link de invitación en el perfil
-    updateInvitationLink() {
-        const linkElement = document.getElementById('invitation-link');
-        
-        if (!linkElement || !this.currentUser) return;
-        
-        const invitationLink = this.generateInvitationLink();
-        if (invitationLink) {
-            linkElement.value = invitationLink;
-        } else {
-            linkElement.value = 'Error generando enlace';
+    // Validar código de invitación a asignatura
+    async validateSubjectInvitation(invitationCode) {
+        if (!this.supabase) {
+            return { valid: false, error: 'Supabase no configurado' };
+        }
+
+        try {
+            const { data, error } = await this.supabase.rpc('validate_subject_invitation', {
+                invitation_code: invitationCode
+            });
+
+            if (error) throw error;
+
+            const result = typeof data === 'string' ? JSON.parse(data) : data;
+            return result;
+        } catch (error) {
+            console.error('Error validando invitación:', error);
+            return { valid: false, error: error.message };
         }
     }
 
-    // FUNCIÓN TEMPORAL PARA TESTING - Generar código de invitación válido
-    generateTestInviteCode() {
-        const testUserId = 'test-user-123';
-        return btoa(testUserId);
+    // Aceptar invitación a asignatura
+    async acceptSubjectInvitation(invitationCode) {
+        if (!this.supabase || !this.currentUser) {
+            return { success: false, error: 'Usuario no autenticado' };
+        }
+
+        try {
+            const { data, error } = await this.supabase.rpc('accept_subject_invitation', {
+                invitation_code: invitationCode,
+                user_id: this.currentUser.id
+            });
+
+            if (error) throw error;
+
+            const result = typeof data === 'string' ? JSON.parse(data) : data;
+            return result;
+        } catch (error) {
+            console.error('Error aceptando invitación:', error);
+            return { success: false, error: error.message };
+        }
     }
 }
 
@@ -946,62 +946,165 @@ document.addEventListener('DOMContentLoaded', function() {
         loginForm.addEventListener('submit', async function(e) {
             e.preventDefault();
             
-            const usernameOrEmail = document.getElementById('login-username').value;
-            const password = document.getElementById('login-password').value;
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            const btnText = submitBtn.querySelector('span');
+            const btnIcon = submitBtn.querySelector('i');
+            const loadingSpinner = submitBtn.querySelector('.loading-spinner');
             
-            if (!usernameOrEmail || !password) {
-                window.authManager.showErrorMessage('Por favor completa todos los campos');
-                return;
-            }
+            // Mostrar loading
+            btnText.style.display = 'none';
+            btnIcon.style.display = 'none';
+            loadingSpinner.style.display = 'inline-block';
+            submitBtn.disabled = true;
             
-            const result = await window.authManager.login(usernameOrEmail, password);
-            
-            if (result.success) {
-                // El manejo del éxito se hace automáticamente en handleAuthSuccess
-            } else {
-                window.authManager.showErrorMessage(result.error);
+            try {
+                const usernameOrEmail = document.getElementById('login-username').value;
+                const password = document.getElementById('login-password').value;
+                
+                if (!usernameOrEmail || !password) {
+                    window.authManager.showErrorMessage('Por favor completa todos los campos');
+                    return;
+                }
+                
+                const result = await window.authManager.login(usernameOrEmail, password);
+                
+                if (result.success) {
+                    // El manejo del éxito se hace automáticamente en handleAuthSuccess
+                } else {
+                    window.authManager.showErrorMessage(result.error);
+                }
+            } finally {
+                // Ocultar loading
+                btnText.style.display = 'inline';
+                btnIcon.style.display = 'inline';
+                loadingSpinner.style.display = 'none';
+                submitBtn.disabled = false;
             }
         });
     }
 
-    // Formulario de registro con validación de invitación
-    const registerForm = document.getElementById('registerForm');
-    if (registerForm) {
-        registerForm.addEventListener('submit', async function(e) {
+    // Formulario de registro - Paso 1: Información Personal
+    const registerStepOneForm = document.getElementById('registerStepOneForm');
+    if (registerStepOneForm) {
+        registerStepOneForm.addEventListener('submit', function(e) {
             e.preventDefault();
-            const inviteCode = document.getElementById('register-invite-code').value;
+            
             const name = document.getElementById('register-name').value;
             const email = document.getElementById('register-email').value;
             const career = document.getElementById('register-career').value;
             const semester = document.getElementById('register-semester').value;
-            const password = document.getElementById('register-password').value;
-            const confirmPassword = document.getElementById('register-confirm-password').value;
             
-            if (!inviteCode || !name || !email || !career || !semester || !password || !confirmPassword) {
-                window.authManager.showErrorMessage('Completa todos los campos, incluyendo el código de invitación');
-                return;
-            }
-            if (password !== confirmPassword) {
-                window.authManager.showErrorMessage('Las contraseñas no coinciden');
-                return;
-            }
-            if (password.length < 6) {
-                window.authManager.showErrorMessage('Mínimo 6 caracteres en contraseña');
+            if (!name || !email || !career || !semester) {
+                window.authManager.showErrorMessage('Completa todos los campos obligatorios');
                 return;
             }
             
-            const userData = { nombre: name, carrera: career, semestre: semester };
-            const result = await window.authManager.register(email, password, userData, inviteCode);
-            if (result.success) {
-                window.authManager.showSuccessMessage(result.message);
-                if (!result.needsConfirmation) {
-                    registerForm.reset();
-                    showLogin();
+            // Validar email
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                window.authManager.showErrorMessage('Ingresa un correo electrónico válido');
+                return;
+            }
+            
+            // Ir al paso 2
+            showRegistrationStep(2);
+        });
+    }
+
+    // Formulario de registro - Paso 2: Crear Contraseña
+    const registerStepTwoForm = document.getElementById('registerStepTwoForm');
+    if (registerStepTwoForm) {
+        registerStepTwoForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            const btnText = submitBtn.querySelector('span');
+            const btnIcon = submitBtn.querySelector('i');
+            const loadingSpinner = submitBtn.querySelector('.loading-spinner');
+            
+            // Mostrar loading
+            btnText.style.display = 'none';
+            btnIcon.style.display = 'none';
+            loadingSpinner.style.display = 'inline-block';
+            submitBtn.disabled = true;
+            
+            try {
+                const name = document.getElementById('register-name').value;
+                const email = document.getElementById('register-email').value;
+                const career = document.getElementById('register-career').value;
+                const semester = document.getElementById('register-semester').value;
+                const password = document.getElementById('register-password').value;
+                const confirmPassword = document.getElementById('register-confirm-password').value;
+                
+                if (!password || !confirmPassword) {
+                    window.authManager.showErrorMessage('Completa los campos de contraseña');
+                    return;
                 }
-            } else {
-                window.authManager.showErrorMessage(result.error);
+                
+                if (password !== confirmPassword) {
+                    window.authManager.showErrorMessage('Las contraseñas no coinciden');
+                    return;
+                }
+                
+                if (password.length < 6) {
+                    window.authManager.showErrorMessage('Mínimo 6 caracteres en contraseña');
+                    return;
+                }
+                
+                const userData = { 
+                    nombre: name, 
+                    carrera: career, 
+                    semestre: semester
+                };
+                
+                const result = await window.authManager.register(email, password, userData);
+                
+                if (result.success) {
+                    window.authManager.showSuccessMessage(result.message);
+                    if (!result.needsConfirmation) {
+                        resetRegistrationForm();
+                        showLogin();
+                    }
+                } else {
+                    window.authManager.showErrorMessage(result.error);
+                }
+            } catch (error) {
+                window.authManager.showErrorMessage('Error en el registro: ' + error.message);
+            } finally {
+                // Restaurar botón
+                btnText.style.display = 'inline';
+                btnIcon.style.display = 'inline';
+                loadingSpinner.style.display = 'none';
+                submitBtn.disabled = false;
             }
         });
+    }
+
+    // Botón volver al paso 1
+    const backToStep1Btn = document.getElementById('back-to-step-1');
+    if (backToStep1Btn) {
+        backToStep1Btn.addEventListener('click', function() {
+            showRegistrationStep(1);
+        });
+    }
+
+    // Password toggles
+    setupPasswordToggle('password-toggle', 'register-password');
+    setupPasswordToggle('confirm-password-toggle', 'register-confirm-password');
+
+    // Password strength evaluator
+    const passwordInput = document.getElementById('register-password');
+    const confirmPasswordInput = document.getElementById('register-confirm-password');
+    
+    if (passwordInput) {
+        passwordInput.addEventListener('input', function() {
+            evaluatePasswordStrength(this.value);
+            checkPasswordMatch();
+        });
+    }
+    
+    if (confirmPasswordInput) {
+        confirmPasswordInput.addEventListener('input', checkPasswordMatch);
     }
 
     // Botón de logout
@@ -1114,69 +1217,354 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Verificar si hay código de invitación en la URL al cargar
-    checkInvitationCodeInURL();
+    // Verificar si hay código de invitación a asignatura en la URL al cargar
+    checkSubjectInvitationInURL();
+    
+    // Procesar invitación pendiente si hay una guardada
+    const pendingInvitation = localStorage.getItem('pending_subject_invitation');
+    if (pendingInvitation && window.authManager && window.authManager.isAuthenticated()) {
+        processSubjectInvitation(pendingInvitation);
+    }
 });
 
 // =================================================================
-// FUNCIONES GLOBALES PARA SISTEMA DE INVITACIÓN
+// FUNCIONES GLOBALES PARA SISTEMA DE INVITACIÓN A ASIGNATURAS
 // =================================================================
 
-// Copiar link de invitación
-function copyInvitationLink() {
-    const linkElement = document.getElementById('invitation-link');
-    if (linkElement && linkElement.value) {
-        linkElement.select();
-        linkElement.setSelectionRange(0, 99999); // Para móviles
+// Copiar link de invitación a asignatura específica
+function copySubjectInvitationLink(invitationCode) {
+    if (!invitationCode) {
+        console.error('No se proporcionó código de invitación');
+        return;
+    }
+    
+    // Crear enlace de invitación
+    const baseUrl = window.location.origin + window.location.pathname;
+    const invitationUrl = `${baseUrl}?invite=${invitationCode}`;
+    
+    try {
+        // Intentar usar la API moderna del portapapeles
+        if (navigator.clipboard && window.isSecureContext) {
+            navigator.clipboard.writeText(invitationUrl).then(() => {
+                if (window.authManager) {
+                    window.authManager.showSuccessMessage('Link de invitación copiado al portapapeles');
+                }
+            }).catch(() => {
+                fallbackCopyTextToClipboard(invitationUrl);
+            });
+        } else {
+            fallbackCopyTextToClipboard(invitationUrl);
+        }
+    } catch (err) {
+        console.error('Error al copiar:', err);
+        if (window.authManager) {
+            window.authManager.showErrorMessage('No se pudo copiar el enlace');
+        }
+    }
+}
+
+// Método alternativo para copiar texto
+function fallbackCopyTextToClipboard(text) {
+    const textArea = document.createElement("textarea");
+    textArea.value = text;
+    textArea.style.top = "0";
+    textArea.style.left = "0";
+    textArea.style.position = "fixed";
+    textArea.style.opacity = "0";
+
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+
+    try {
+        document.execCommand('copy');
+        if (window.authManager) {
+            window.authManager.showSuccessMessage('Link de invitación copiado al portapapeles');
+        }
+    } catch (err) {
+        console.error('Error en método alternativo:', err);
+        if (window.authManager) {
+            window.authManager.showErrorMessage('No se pudo copiar el enlace');
+        }
+    }
+
+    document.body.removeChild(textArea);
+}
+
+// Verificar si hay código de invitación a asignatura en la URL
+function checkSubjectInvitationInURL() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const inviteCode = urlParams.get('invite');
+    
+    if (inviteCode) {
+        console.log('Código de invitación a asignatura detectado:', inviteCode);
         
-        try {
-            document.execCommand('copy');
-            
-            // Feedback visual
-            linkElement.classList.add('copy-success');
-            setTimeout(() => linkElement.classList.remove('copy-success'), 600);
-            
+        // Guardar código para procesar después del login
+        localStorage.setItem('pending_subject_invitation', inviteCode);
+        
+        // Limpiar URL
+        const newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
+        window.history.replaceState({}, document.title, newUrl);
+        
+        // Si el usuario ya está logueado, procesar la invitación
+        if (window.authManager && window.authManager.isAuthenticated()) {
+            processSubjectInvitation(inviteCode);
+        } else {
+            // Mostrar mensaje para que inicie sesión
             if (window.authManager) {
-                window.authManager.showSuccessMessage('Link de invitación copiado al portapapeles');
-            }
-        } catch (err) {
-            console.error('Error al copiar:', err);
-            if (window.authManager) {
-                window.authManager.showErrorMessage('No se pudo copiar el enlace');
+                window.authManager.showSuccessMessage('Invitación detectada. Inicia sesión para unirte a la asignatura.');
             }
         }
     }
 }
 
-// Verificar si hay código de invitación en la URL
-function checkInvitationCodeInURL() {
-    const urlParams = new URLSearchParams(window.location.search);
-    const inviteCode = urlParams.get('invite');
+// Procesar invitación a asignatura después del login
+async function processSubjectInvitation(invitationCode) {
+    if (!window.authManager || !window.dbManager) return;
     
-    if (inviteCode) {
-        console.log('Código de invitación detectado en URL:', inviteCode);
+    try {
+        // Validar la invitación
+        const validation = await window.dbManager.validateSubjectInvitation(invitationCode);
         
-        // Mostrar formulario de registro con código prellenado
-        showRegister();
+        if (validation.valid) {
+            const invitation = validation.invitation;
+            
+            // Mostrar modal de confirmación de invitación
+            showSubjectInvitationModal(invitation, invitationCode);
+        } else {
+            window.authManager.showErrorMessage(validation.error || 'Invitación inválida');
+        }
+    } catch (error) {
+        console.error('Error procesando invitación:', error);
+        window.authManager.showErrorMessage('Error al procesar la invitación');
+    } finally {
+        // Limpiar invitación pendiente
+        localStorage.removeItem('pending_subject_invitation');
+    }
+}
+
+// Mostrar modal para confirmar invitación a asignatura
+function showSubjectInvitationModal(invitation, invitationCode) {
+    // Crear modal dinámicamente
+    const modalHTML = `
+        <div id="subject-invitation-modal" class="modal active">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div class="modal-title-section">
+                        <i class="fas fa-envelope-open"></i>
+                        <h3>Invitación a Asignatura</h3>
+                    </div>
+                </div>
+                <div class="modal-body">
+                    <div class="invitation-details">
+                        <div class="subject-card">
+                            <div class="subject-header" style="background-color: ${invitation.subject.color}">
+                                <h4>${invitation.subject.name}</h4>
+                            </div>
+                            <div class="subject-info">
+                                <p><i class="fas fa-user-tie"></i> <strong>Profesor:</strong> ${invitation.subject.professor}</p>
+                                <p><i class="fas fa-clock"></i> <strong>Horario:</strong> ${invitation.subject.schedule}</p>
+                                <p><i class="fas fa-user"></i> <strong>Invitado por:</strong> ${invitation.inviter.name} (@${invitation.inviter.username || 'usuario'})</p>
+                                ${invitation.message ? `<p><i class="fas fa-comment"></i> <strong>Mensaje:</strong> "${invitation.message}"</p>` : ''}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline" onclick="declineSubjectInvitation()">
+                        <i class="fas fa-times"></i>
+                        Rechazar
+                    </button>
+                    <button type="button" class="btn btn-primary" onclick="acceptSubjectInvitation('${invitationCode}')">
+                        <i class="fas fa-check"></i>
+                        <span>Unirse a la Asignatura</span>
+                        <div class="loading-spinner" style="display: none;"></div>
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Agregar modal al DOM
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+}
+
+// Aceptar invitación a asignatura
+async function acceptSubjectInvitation(invitationCode) {
+    const button = document.querySelector('#subject-invitation-modal .btn-primary');
+    
+    try {
+        window.loadingManager.showButtonLoading(button);
         
-        // Esperar un momento para que el DOM se actualice
-        setTimeout(() => {
-            const inviteInput = document.getElementById('register-invite-code');
-            if (inviteInput) {
-                inviteInput.value = inviteCode;
-                inviteInput.style.background = 'rgba(39, 174, 96, 0.1)';
-                inviteInput.style.borderColor = '#27ae60';
-                
-                // Mostrar mensaje de bienvenida
-                if (window.authManager) {
-                    window.authManager.showSuccessMessage('¡Enlace de invitación detectado! Completa el registro.');
-                }
+        const result = await window.dbManager.acceptSubjectInvitation(invitationCode);
+        
+        if (result.success) {
+            window.authManager.showSuccessMessage(result.message);
+            closeSubjectInvitationModal();
+            
+            // Recargar asignaturas si estamos en esa sección
+            if (window.subjectsManager) {
+                window.subjectsManager.loadSubjects();
             }
-        }, 500);
-        
-        // Limpiar URL
-        const newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
-        window.history.replaceState({}, document.title, newUrl);
+            
+            // Actualizar dashboard
+            if (window.dashboardManager) {
+                window.dashboardManager.loadDashboardData();
+            }
+        } else {
+            window.authManager.showErrorMessage(result.error);
+        }
+    } catch (error) {
+        console.error('Error aceptando invitación:', error);
+        window.authManager.showErrorMessage('Error al unirse a la asignatura');
+    } finally {
+        window.loadingManager.hideButtonLoading(button);
+    }
+}
+
+// Rechazar invitación a asignatura
+function declineSubjectInvitation() {
+    closeSubjectInvitationModal();
+    if (window.authManager) {
+        window.authManager.showSuccessMessage('Invitación rechazada');
+    }
+}
+
+// =================================================================
+// FUNCIONES PARA REGISTRO DE DOS PASOS
+// =================================================================
+
+// Mostrar paso específico del registro
+function showRegistrationStep(step) {
+    const step1 = document.getElementById('register-step-1');
+    const step2 = document.getElementById('register-step-2');
+    
+    if (step === 1) {
+        step1.classList.add('active');
+        step2.classList.remove('active');
+    } else if (step === 2) {
+        step1.classList.remove('active');
+        step2.classList.add('active');
+    }
+}
+
+// Resetear formulario de registro
+function resetRegistrationForm() {
+    const inputs = ['register-name', 'register-email', 'register-career', 'register-semester', 'register-password', 'register-confirm-password'];
+    inputs.forEach(id => {
+        const input = document.getElementById(id);
+        if (input) input.value = '';
+    });
+    
+    // Resetear medidor de contraseña
+    const strengthBar = document.getElementById('strength-bar');
+    const strengthText = document.getElementById('strength-text');
+    const passwordMatch = document.getElementById('password-match');
+    
+    if (strengthBar) {
+        strengthBar.className = 'strength-bar';
+        strengthBar.style.width = '0%';
+    }
+    if (strengthText) {
+        strengthText.textContent = 'Ingresa una contraseña';
+        strengthText.className = 'strength-text';
+    }
+    if (passwordMatch) {
+        passwordMatch.textContent = '';
+        passwordMatch.className = 'password-match';
+    }
+    
+    // Volver al paso 1
+    showRegistrationStep(1);
+}
+
+// Setup password toggle
+function setupPasswordToggle(toggleId, inputId) {
+    const toggle = document.getElementById(toggleId);
+    const input = document.getElementById(inputId);
+    
+    if (toggle && input) {
+        toggle.addEventListener('click', function() {
+            const type = input.getAttribute('type') === 'password' ? 'text' : 'password';
+            input.setAttribute('type', type);
+            
+            const icon = toggle.querySelector('i');
+            icon.classList.toggle('fa-eye');
+            icon.classList.toggle('fa-eye-slash');
+        });
+    }
+}
+
+// Evaluar fuerza de contraseña
+function evaluatePasswordStrength(password) {
+    const strengthBar = document.getElementById('strength-bar');
+    const strengthText = document.getElementById('strength-text');
+    
+    if (!strengthBar || !strengthText) return;
+    
+    let score = 0;
+    let feedback = '';
+    
+    if (password.length === 0) {
+        strengthBar.className = 'strength-bar';
+        strengthBar.style.width = '0%';
+        strengthText.textContent = 'Ingresa una contraseña';
+        strengthText.className = 'strength-text';
+        return;
+    }
+    
+    // Criterios de evaluación
+    if (password.length >= 8) score += 1;
+    if (password.length >= 12) score += 1;
+    if (/[a-z]/.test(password)) score += 1;
+    if (/[A-Z]/.test(password)) score += 1;
+    if (/[0-9]/.test(password)) score += 1;
+    if (/[^A-Za-z0-9]/.test(password)) score += 1;
+    
+    // Determinar nivel de fuerza
+    if (score <= 2) {
+        strengthBar.className = 'strength-bar weak';
+        strengthText.textContent = 'Contraseña débil';
+        strengthText.className = 'strength-text weak';
+    } else if (score <= 4) {
+        strengthBar.className = 'strength-bar medium';
+        strengthText.textContent = 'Contraseña media';
+        strengthText.className = 'strength-text medium';
+    } else {
+        strengthBar.className = 'strength-bar strong';
+        strengthText.textContent = 'Contraseña fuerte';
+        strengthText.className = 'strength-text strong';
+    }
+}
+
+// Verificar coincidencia de contraseñas
+function checkPasswordMatch() {
+    const password = document.getElementById('register-password').value;
+    const confirmPassword = document.getElementById('register-confirm-password').value;
+    const matchIndicator = document.getElementById('password-match');
+    
+    if (!matchIndicator) return;
+    
+    if (confirmPassword.length === 0) {
+        matchIndicator.textContent = '';
+        matchIndicator.className = 'password-match';
+        return;
+    }
+    
+    if (password === confirmPassword) {
+        matchIndicator.textContent = '✓ Las contraseñas coinciden';
+        matchIndicator.className = 'password-match match';
+    } else {
+        matchIndicator.textContent = '✗ Las contraseñas no coinciden';
+        matchIndicator.className = 'password-match no-match';
+    }
+}
+
+// Cerrar modal de invitación a asignatura
+function closeSubjectInvitationModal() {
+    const modal = document.getElementById('subject-invitation-modal');
+    if (modal) {
+        modal.remove();
     }
 }
 

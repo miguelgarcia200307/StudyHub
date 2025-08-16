@@ -922,10 +922,14 @@ class AppManager {
 
     // Renderizar progreso de tareas
     renderTaskProgress(progress, total) {
-        // Actualizar contadores
-        document.getElementById('progress-pending').textContent = progress.pending;
-        document.getElementById('progress-in-progress').textContent = progress.inProgress;
-        document.getElementById('progress-completed').textContent = progress.completed;
+        // Actualizar contadores solo si los elementos existen
+        const pendingEl = document.getElementById('progress-pending');
+        const inProgressEl = document.getElementById('progress-in-progress');
+        const completedEl = document.getElementById('progress-completed');
+        
+        if (pendingEl) pendingEl.textContent = progress.pending;
+        if (inProgressEl) inProgressEl.textContent = progress.inProgress;
+        if (completedEl) completedEl.textContent = progress.completed;
 
         // Calcular y actualizar barras de progreso
         if (total > 0) {
@@ -933,14 +937,22 @@ class AppManager {
             const inProgressPercent = (progress.inProgress / total) * 100;
             const completedPercent = (progress.completed / total) * 100;
 
-            document.getElementById('progress-pending-bar').style.width = `${pendingPercent}%`;
-            document.getElementById('progress-in-progress-bar').style.width = `${inProgressPercent}%`;
-            document.getElementById('progress-completed-bar').style.width = `${completedPercent}%`;
+            const pendingBar = document.getElementById('progress-pending-bar');
+            const inProgressBar = document.getElementById('progress-in-progress-bar');
+            const completedBar = document.getElementById('progress-completed-bar');
+
+            if (pendingBar) pendingBar.style.width = `${pendingPercent}%`;
+            if (inProgressBar) inProgressBar.style.width = `${inProgressPercent}%`;
+            if (completedBar) completedBar.style.width = `${completedPercent}%`;
         } else {
             // Si no hay tareas, resetear barras
-            document.getElementById('progress-pending-bar').style.width = '0%';
-            document.getElementById('progress-in-progress-bar').style.width = '0%';
-            document.getElementById('progress-completed-bar').style.width = '0%';
+            const pendingBar = document.getElementById('progress-pending-bar');
+            const inProgressBar = document.getElementById('progress-in-progress-bar');
+            const completedBar = document.getElementById('progress-completed-bar');
+
+            if (pendingBar) pendingBar.style.width = '0%';
+            if (inProgressBar) inProgressBar.style.width = '0%';
+            if (completedBar) completedBar.style.width = '0%';
         }
     }
 
@@ -997,6 +1009,36 @@ class TasksManager {
                 this.handleTaskSubmit();
             });
         }
+
+        // Event delegation para botones de tareas
+        document.addEventListener('click', (e) => {
+            // Botón eliminar tarea
+            if (e.target.closest('.task-delete-btn')) {
+                e.stopPropagation();
+                const btn = e.target.closest('.task-delete-btn');
+                const taskId = btn.getAttribute('data-task-id');
+                this.deleteTask(taskId);
+                return;
+            }
+
+            // Botón editar tarea
+            if (e.target.closest('.task-edit-btn')) {
+                e.stopPropagation();
+                const btn = e.target.closest('.task-edit-btn');
+                const taskId = btn.getAttribute('data-task-id');
+                this.editTaskById(taskId);
+                return;
+            }
+
+            // Checkbox de estado de tarea
+            if (e.target.closest('.task-checkbox')) {
+                const checkbox = e.target.closest('.task-checkbox');
+                const taskId = checkbox.getAttribute('data-task-id');
+                const currentStatus = checkbox.getAttribute('data-status');
+                this.toggleTaskStatus(taskId, currentStatus);
+                return;
+            }
+        });
 
         // Filtros de tareas
         const filterBtns = document.querySelectorAll('.filter-btn');
@@ -1254,10 +1296,10 @@ class TasksManager {
                 </div>
                 
                 <div class="task-actions">
-                    <button class="btn-icon" onclick="event.stopPropagation(); window.tasksManager.showTaskModal(${JSON.stringify(task).replace(/"/g, '&quot;')})" title="Editar tarea">
+                    <button class="btn-icon task-edit-btn" data-task-id="${task.id}" title="Editar tarea">
                         <i class="fas fa-edit"></i>
                     </button>
-                    <button class="btn-icon btn-danger" onclick="event.stopPropagation(); window.tasksManager.deleteTask(${task.id})" title="Eliminar tarea">
+                    <button class="btn-icon btn-danger task-delete-btn" data-task-id="${task.id}" title="Eliminar tarea">
                         <i class="fas fa-trash"></i>
                     </button>
                 </div>
@@ -1280,7 +1322,7 @@ class TasksManager {
                         ${isOverdue ? '<i class="fas fa-exclamation-triangle text-danger" title="Vencida"></i>' : ''}
                     </div>
                     <div class="task-checkbox ${task.estado === 'terminado' ? 'completed' : ''}" 
-                         onclick="window.tasksManager.toggleTaskStatus(${task.id}, '${task.estado}')">
+                         data-task-id="${task.id}" data-status="${task.estado}">
                         ${task.estado === 'terminado' ? '<i class="fas fa-check"></i>' : ''}
                     </div>
                 </div>
@@ -1309,10 +1351,10 @@ class TasksManager {
                     </div>
                     
                     <div class="task-actions">
-                        <button class="btn-icon" onclick="event.stopPropagation(); window.tasksManager.showTaskModal(${JSON.stringify(task).replace(/"/g, '&quot;')})" title="Editar tarea">
+                        <button class="btn-icon task-edit-btn" data-task-id="${task.id}" title="Editar tarea">
                             <i class="fas fa-edit"></i>
                         </button>
-                        <button class="btn-icon btn-danger" onclick="event.stopPropagation(); window.tasksManager.deleteTask(${task.id})" title="Eliminar tarea">
+                        <button class="btn-icon btn-danger task-delete-btn" data-task-id="${task.id}" title="Eliminar tarea">
                             <i class="fas fa-trash"></i>
                         </button>
                     </div>
@@ -1477,6 +1519,23 @@ class TasksManager {
             window.authManager.showSuccessMessage('Tarea eliminada correctamente');
         } else {
             window.authManager.showErrorMessage(result.error);
+        }
+    }
+
+    // Editar tarea por ID
+    async editTaskById(taskId) {
+        try {
+            const tasks = await this.getAllTasks();
+            const task = tasks.find(t => t.id == taskId);
+            
+            if (task) {
+                this.showTaskModal(task);
+            } else {
+                window.authManager.showErrorMessage('No se pudo encontrar la tarea');
+            }
+        } catch (error) {
+            console.error('Error al cargar tarea para editar:', error);
+            window.authManager.showErrorMessage('Error al cargar la tarea');
         }
     }
 

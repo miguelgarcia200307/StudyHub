@@ -8,8 +8,7 @@
     <link rel="stylesheet" href="css/animations.css">
     <link rel="stylesheet" href="css/tasks.css">
     <link rel="stylesheet" href="css/profile.css">
-    <link rel="stylesheet" href="css/login.css">g="es">
-<head>
+    <link rel="stylesheet" href="css/login.css">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>StudyHub - Gestión Académica</title>
@@ -33,6 +32,7 @@
     <link rel="stylesheet" href="css/tasks.css">
     <link rel="stylesheet" href="css/profile.css">
     <link rel="stylesheet" href="css/animations.css">
+    <link rel="stylesheet" href="css/responsive.css">
 </head>
 <body>
     <!-- Pantalla de carga -->
@@ -70,66 +70,119 @@
                             </div>
                             <button type="submit" class="btn btn-primary">
                                 <i class="fas fa-sign-in-alt"></i>
-                                Iniciar Sesión
+                                <span>Iniciar Sesión</span>
+                                <div class="loading-spinner" style="display: none;"></div>
                             </button>
                         </form>
                         <p class="auth-info">
-                            <i class="fas fa-lock"></i>
-                            StudyHub es un sistema exclusivo por invitación. Si no tienes acceso, contacta a un administrador.
+                            <i class="fas fa-users"></i>
+                            StudyHub: Colabora en asignaturas con tus compañeros. Crea asignaturas e invita a quien quieras.
                         </p>
-                        <p class="auth-switch">
-                            ¿No tienes cuenta? <a href="#" onclick="showRegister()">Crear cuenta</a>
-                        </p>
+                        <div class="auth-actions">
+                            <button type="button" class="btn btn-outline btn-register" onclick="showRegister()">
+                                <i class="fas fa-user-plus"></i>
+                                ¿No tienes cuenta? Crear cuenta gratis
+                            </button>
+                        </div>
                     </div>
 
                     <!-- Formulario de Registro -->
                     <div id="register-form" class="auth-form">
                         <h2>Crear Cuenta</h2>
                         <p class="subtitle">Únete a StudyHub</p>
-                        <div class="invite-notice">
-                            <i class="fas fa-user-friends"></i>
-                            <p>Acceso solo por invitación</p>
+                        <div class="register-notice">
+                            <i class="fas fa-users"></i>
+                            <p>Registro libre - Colabora por asignaturas</p>
                         </div>
-                        <form id="registerForm">
-                            <div class="form-group">
-                                <i class="fas fa-ticket-alt"></i>
-                                <input type="text" id="register-invite-code" placeholder="Código de invitación" required>
-                                <small class="form-help">Código proporcionado por quien te invitó</small>
+                        
+                        <!-- Paso 1: Información Personal -->
+                        <div id="register-step-1" class="register-step active">
+                            <div class="step-indicator">
+                                <span class="step active">1</span>
+                                <span class="step-divider"></span>
+                                <span class="step">2</span>
                             </div>
-                            <div class="form-group">
-                                <i class="fas fa-user"></i>
-                                <input type="text" id="register-name" placeholder="Nombre completo" required>
+                            <h3>Información Personal</h3>
+                            <form id="registerStepOneForm">
+                                <div class="form-group">
+                                    <i class="fas fa-user"></i>
+                                    <input type="text" id="register-name" placeholder="Nombre completo" required>
+                                </div>
+                                <div class="form-group">
+                                    <i class="fas fa-envelope"></i>
+                                    <input type="email" id="register-email" placeholder="Correo electrónico" required>
+                                    <small class="form-help">Para confirmación y notificaciones</small>
+                                </div>
+                                <div class="form-group">
+                                    <i class="fas fa-graduation-cap"></i>
+                                    <input type="text" id="register-career" placeholder="Carrera" required>
+                                </div>
+                                <div class="form-group">
+                                    <i class="fas fa-calendar"></i>
+                                    <input type="text" id="register-semester" placeholder="Semestre" required>
+                                </div>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-arrow-right"></i>
+                                    <span>Continuar</span>
+                                </button>
+                            </form>
+                        </div>
+                        
+                        <!-- Paso 2: Crear Contraseña -->
+                        <div id="register-step-2" class="register-step">
+                            <div class="step-indicator">
+                                <span class="step completed">1</span>
+                                <span class="step-divider completed"></span>
+                                <span class="step active">2</span>
                             </div>
-                            <div class="form-group">
-                                <i class="fas fa-envelope"></i>
-                                <input type="email" id="register-email" placeholder="Correo electrónico" required>
-                                <small class="form-help">Para confirmación y notificaciones</small>
-                            </div>
-                            <div class="form-group">
-                                <i class="fas fa-graduation-cap"></i>
-                                <input type="text" id="register-career" placeholder="Carrera" required>
-                            </div>
-                            <div class="form-group">
-                                <i class="fas fa-calendar"></i>
-                                <input type="text" id="register-semester" placeholder="Semestre" required>
-                            </div>
-                            <div class="form-group">
-                                <i class="fas fa-lock"></i>
-                                <input type="password" id="register-password" placeholder="Contraseña" required>
-                            </div>
-                            <div class="form-group">
-                                <i class="fas fa-lock"></i>
-                                <input type="password" id="register-confirm-password" placeholder="Confirmar contraseña" required>
-                            </div>
-                            <button type="submit" class="btn btn-primary">
-                                <i class="fas fa-user-plus"></i>
-                                Crear Cuenta
+                            <h3>Crear Contraseña</h3>
+                            <form id="registerStepTwoForm">
+                                <div class="form-group">
+                                    <i class="fas fa-lock"></i>
+                                    <div class="password-input-container">
+                                        <input type="password" id="register-password" placeholder="Contraseña" required>
+                                        <button type="button" class="password-toggle" id="password-toggle">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                    </div>
+                                    <div class="password-strength" id="password-strength">
+                                        <div class="strength-meter">
+                                            <div class="strength-bar" id="strength-bar"></div>
+                                        </div>
+                                        <span class="strength-text" id="strength-text">Ingresa una contraseña</span>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <i class="fas fa-lock"></i>
+                                    <div class="password-input-container">
+                                        <input type="password" id="register-confirm-password" placeholder="Confirmar contraseña" required>
+                                        <button type="button" class="password-toggle" id="confirm-password-toggle">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                    </div>
+                                    <div class="password-match" id="password-match"></div>
+                                </div>
+                                <div class="form-actions">
+                                    <button type="button" class="btn btn-outline" id="back-to-step-1">
+                                        <i class="fas fa-arrow-left"></i>
+                                        Atrás
+                                    </button>
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-user-plus"></i>
+                                        <span>Crear Cuenta</span>
+                                        <div class="loading-spinner" style="display: none;"></div>
+                                    </button>
+                                </div>
+                            </form>
+                            <small class="form-help">Después podrás personalizar tu perfil y crear asignaturas.</small>
+                        </div>
+                        
+                        <div class="auth-actions">
+                            <button type="button" class="btn btn-outline btn-login" onclick="showLogin()">
+                                <i class="fas fa-sign-in-alt"></i>
+                                ¿Ya tienes cuenta? Inicia sesión
                             </button>
-                            <small class="form-help">El username lo podrás definir luego en tu perfil.</small>
-                        </form>
-                        <p class="auth-switch">
-                            ¿Ya tienes cuenta? <a href="#" onclick="showLogin()">Inicia sesión aquí</a>
-                        </p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -191,7 +244,13 @@
 
             <div class="sidebar-footer">
                 <div class="user-info">
-                    <img src="img/default-avatar.png" alt="Usuario" class="user-avatar" id="user-avatar">
+                    <div class="user-avatar" id="user-avatar-container">
+                        <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="16" cy="16" r="16" fill="#667eea"/>
+                            <circle cx="16" cy="12" r="5" fill="white"/>
+                            <path d="M6 26c0-5.5 4.5-10 10-10s10 4.5 10 10" fill="white"/>
+                        </svg>
+                    </div>
                     <div class="user-details">
                         <span class="user-name" id="user-name">Usuario</span>
                         <span class="user-email" id="user-email">email@ejemplo.com</span>
@@ -226,6 +285,12 @@
                             <span class="notification-badge" id="notification-badge">0</span>
                         </button>
                     </div>
+                    <!-- Botón global para usar código (visible en toda la app) -->
+                    <button id="use-access-code-topbtn" class="btn btn-primary" type="button"
+                            onclick="document.getElementById('access-code-modal').classList.add('active'); setTimeout(()=>{ const i = document.getElementById('access-code-input'); if(i) i.focus(); },100);">
+                        <i class="fas fa-key"></i>
+                        🔑 USAR CÓDIGO
+                    </button>
                 </div>
             </header>
 
@@ -557,10 +622,16 @@
                 <section id="subjects-section" class="content-section">
                     <div class="section-header">
                         <h2>Asignaturas</h2>
-                        <button class="btn btn-primary" id="add-subject-btn">
-                            <i class="fas fa-plus"></i>
-                            Nueva Asignatura
-                        </button>
+                        <div class="header-actions">
+                            <button class="btn btn-outline" id="use-access-code-btn">
+                                <i class="fas fa-key"></i>
+                                Usar Código
+                            </button>
+                            <button class="btn btn-primary" id="add-subject-btn">
+                                <i class="fas fa-plus"></i>
+                                Nueva Asignatura
+                            </button>
+                        </div>
                     </div>
                     <div class="subjects-grid" id="subjects-grid">
                         <!-- Se llena dinámicamente -->
@@ -675,7 +746,13 @@
                             <div class="profile-header">
                                 <div class="profile-avatar-modern">
                                     <div class="avatar-container-modern">
-                                        <img src="img/default-avatar.png" alt="Avatar" id="profile-avatar" class="avatar-image-modern">
+                                        <div class="avatar-image-modern" id="profile-avatar">
+                                            <svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                <circle cx="40" cy="40" r="40" fill="#667eea"/>
+                                                <circle cx="40" cy="30" r="12" fill="white"/>
+                                                <path d="M15 65c0-13.8 11.2-25 25-25s25 11.2 25 25" fill="white"/>
+                                            </svg>
+                                        </div>
                                     </div>
                                     <button class="avatar-upload-btn" id="avatar-upload-btn">
                                         <i class="fas fa-camera"></i>
@@ -745,29 +822,44 @@
                             </form>
                         </div>
                         
-                        <!-- Sección de Invitación -->
+                        <!-- Sección de Colaboración -->
                         <div class="card invite-card">
                             <div class="card-header">
                                 <h3>
-                                    <i class="fas fa-user-plus"></i>
-                                    Invitar Amigos
+                                    <i class="fas fa-users"></i>
+                                    Colaboración por Asignaturas
                                 </h3>
-                                <p>Comparte el acceso a StudyHub con tus amigos</p>
+                                <p>Invita colaboradores específicos para cada asignatura</p>
                             </div>
                             <div class="card-body">
-                                <div class="invite-section">
-                                    <label>Link de Invitación</label>
-                                    <div class="invite-link-container">
-                                        <input type="text" id="invitation-link" readonly>
-                                        <button type="button" class="btn btn-outline" onclick="copyInvitationLink()">
-                                            <i class="fas fa-copy"></i>
-                                            Copiar
-                                        </button>
+                                <div class="collaboration-info">
+                                    <div class="info-item">
+                                        <i class="fas fa-graduation-cap"></i>
+                                        <div>
+                                            <strong>Asignaturas Propias</strong>
+                                            <p>Crea asignaturas e invita a quienes quieras que colaboren contigo</p>
+                                        </div>
                                     </div>
-                                    <small class="form-help">
-                                        <i class="fas fa-info-circle"></i>
-                                        Comparte este enlace para que tus amigos puedan registrarse
-                                    </small>
+                                    <div class="info-item">
+                                        <i class="fas fa-handshake"></i>
+                                        <div>
+                                            <strong>Colaboraciones</strong>
+                                            <p>Únete a asignaturas cuando otros te inviten a colaborar</p>
+                                        </div>
+                                    </div>
+                                    <div class="info-item">
+                                        <i class="fas fa-share-alt"></i>
+                                        <div>
+                                            <strong>Gestionar Colaboradores</strong>
+                                            <p>Desde cada asignatura puedes invitar o gestionar colaboradores</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="collaboration-actions">
+                                    <button type="button" class="btn btn-primary" onclick="switchToSection('subjects')">
+                                        <i class="fas fa-graduation-cap"></i>
+                                        Ver Mis Asignaturas
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -1070,9 +1162,148 @@
             </form>
         </div>
     </div>
-                    <button type="submit" class="btn btn-primary">Guardar</button>
+    <!-- Modal para gestionar colaboradores -->
+    <div id="collaborators-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title-section">
+                    <i class="fas fa-users"></i>
+                    <h3 id="collaborators-modal-title">Gestionar Colaboradores</h3>
                 </div>
-            </form>
+                <button class="modal-close" onclick="closeCollaboratorsModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <!-- Información de la asignatura -->
+                <div class="subject-info">
+                    <h4 id="collab-subject-name">Nombre de la Asignatura</h4>
+                    <p id="collab-subject-details">Profesor • Horario</p>
+                </div>
+                
+                <!-- Sección para generar códigos de acceso -->
+                <div class="invite-section">
+                    <h5><i class="fas fa-key"></i> Generar Código de Acceso</h5>
+                    <p class="section-description">Crea un código único para que otros puedan unirse a esta asignatura</p>
+                    
+                    <div class="form-group">
+                        <label for="access-code-message">Descripción (opcional)</label>
+                        <textarea id="access-code-message" rows="2" placeholder="Agrega una descripción del código..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="access-code-days">Validez del código</label>
+                        <select id="access-code-days">
+                            <option value="1">1 día</option>
+                            <option value="3">3 días</option>
+                            <option value="7" selected>7 días</option>
+                            <option value="30">30 días</option>
+                        </select>
+                    </div>
+                    <button type="button" class="btn btn-primary" id="generate-access-code-btn">
+                        <i class="fas fa-key"></i>
+                        <span>Generar Código</span>
+                        <div class="loading-spinner" style="display: none;"></div>
+                    </button>
+                    
+                    <!-- Mostrar código generado -->
+                    <div id="generated-code-section" class="generated-code" style="display: none;">
+                        <div class="code-display">
+                            <label>Código de Acceso Generado:</label>
+                            <div class="code-value">
+                                <span id="access-code-value">XXXX-XXXX</span>
+                                <button type="button" class="btn btn-sm btn-outline" onclick="copyAccessCode()">
+                                    <i class="fas fa-copy"></i>
+                                    Copiar
+                                </button>
+                            </div>
+                            <small class="form-help">
+                                <i class="fas fa-info-circle"></i>
+                                Comparte este código para que otros puedan unirse a la asignatura
+                            </small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Lista de colaboradores actuales -->
+                <div class="collaborators-section">
+                    <h5><i class="fas fa-users"></i> Colaboradores Actuales</h5>
+                    <div id="collaborators-list" class="collaborators-list">
+                        <!-- Se llena dinámicamente -->
+                    </div>
+                </div>
+
+                <!-- Códigos de acceso activos -->
+                <div class="active-codes-section">
+                    <h5><i class="fas fa-key"></i> Códigos de Acceso Activos</h5>
+                    <div id="active-codes-list" class="active-codes-list">
+                        <!-- Se llena dinámicamente -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para usar código de acceso -->
+    <div id="access-code-modal" class="modal">
+        <div class="modal-content modal-small">
+            <div class="modal-header">
+                <div class="modal-title-section">
+                    <i class="fas fa-key"></i>
+                    <h3>Usar Código de Acceso</h3>
+                </div>
+                <button class="modal-close" onclick="closeModal('access-code-modal')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p class="modal-description">
+                    Ingresa el código de acceso que te compartieron para unirte a una asignatura.
+                </p>
+                <form id="use-access-code-form">
+                    <div class="form-group">
+                        <label for="access-code-input">Código de Acceso</label>
+                        <input type="text" id="access-code-input" placeholder="XXXX-XXXX" required maxlength="9" style="text-transform: uppercase;">
+                        <small class="form-help">El código tiene el formato XXXX-XXXX</small>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline" onclick="closeModal('access-code-modal')">
+                            <i class="fas fa-times"></i>
+                            Cancelar
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-sign-in-alt"></i>
+                            <span>Unirse</span>
+                            <div class="loading-spinner" style="display: none;"></div>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para confirmar eliminación -->
+    <div id="confirm-modal" class="modal">
+        <div class="modal-content modal-small">
+            <div class="modal-header">
+                <h3 id="confirm-modal-title">Confirmar Acción</h3>
+                <button class="modal-close" onclick="closeModal('confirm-modal')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p id="confirm-modal-message">¿Estás seguro de que quieres realizar esta acción?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline" onclick="closeModal('confirm-modal')">
+                    <i class="fas fa-times"></i>
+                    Cancelar
+                </button>
+                <button type="button" id="confirm-modal-action" class="btn btn-danger">
+                    <i class="fas fa-check"></i>
+                    <span>Confirmar</span>
+                    <div class="loading-spinner" style="display: none;"></div>
+                </button>
+            </div>
         </div>
     </div>
 
@@ -1084,6 +1315,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     
     <!-- Scripts de la aplicación -->
+    <script src="js/loading-utils.js"></script>
     <script src="js/db.js"></script>
     <script src="js/auth.js"></script>
     <script src="js/calendar.js"></script>
@@ -1092,8 +1324,8 @@
     <script src="js/dashboard.js"></script>
     <script src="js/main.js"></script>
     
-    <!-- Debug script para testing de eliminación -->
-    <script src="debug-delete.js"></script>
+    <!-- Script de configuración de base de datos de prueba -->
+    <script src="db/setup-test-db.js"></script>
 
     <!-- Inicializar Calendar Manager -->
     <script>
@@ -1105,6 +1337,92 @@
             } else {
                 console.error('CalendarManager no está definido');
             }
+            
+            // Asegurar que el botón "Usar Código" funcione
+            console.log('Verificando botón usar código...');
+            
+            function initUseCodeButton() {
+                const useCodeBtn = document.getElementById('use-access-code-btn');
+                console.log('Botón usar código encontrado:', useCodeBtn);
+                
+                if (useCodeBtn) {
+                    // Remover listeners anteriores
+                    const newBtn = useCodeBtn.cloneNode(true);
+                    useCodeBtn.parentNode.replaceChild(newBtn, useCodeBtn);
+                    
+                    newBtn.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        console.log('Click en botón usar código');
+                        
+                        // Mostrar modal
+                        const modal = document.getElementById('access-code-modal');
+                        if (modal) {
+                            // Limpiar formulario
+                            const input = document.getElementById('access-code-input');
+                            if (input) input.value = '';
+                            
+                            // Mostrar modal
+                            modal.classList.add('active');
+                            
+                            // Focus en el input
+                            setTimeout(() => {
+                                if (input) input.focus();
+                            }, 100);
+                            
+                            console.log('Modal de código de acceso mostrado');
+                        } else {
+                            console.error('Modal access-code-modal no encontrado');
+                        }
+                    });
+                    
+                    console.log('Event listener agregado al botón usar código');
+                } else {
+                    console.log('Botón no encontrado, creando...');
+                    createUseCodeButton();
+                }
+            }
+            
+            function createUseCodeButton() {
+                const headerActions = document.querySelector('.header-actions');
+                if (headerActions && !document.getElementById('use-access-code-btn')) {
+                    console.log('Creando botón usar código...');
+                    
+                    const useCodeBtn = document.createElement('button');
+                    useCodeBtn.id = 'use-access-code-btn';
+                    useCodeBtn.className = 'btn btn-outline';
+                    useCodeBtn.innerHTML = '<i class="fas fa-key"></i> Usar Código';
+                    
+                    useCodeBtn.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        console.log('Click en botón usar código (creado)');
+                        
+                        const modal = document.getElementById('access-code-modal');
+                        if (modal) {
+                            const input = document.getElementById('access-code-input');
+                            if (input) input.value = '';
+                            modal.classList.add('active');
+                            setTimeout(() => {
+                                if (input) input.focus();
+                            }, 100);
+                        }
+                    });
+                    
+                    // Insertar antes del botón "Nueva Asignatura"
+                    const addBtn = document.getElementById('add-subject-btn');
+                    if (addBtn) {
+                        headerActions.insertBefore(useCodeBtn, addBtn);
+                    } else {
+                        headerActions.appendChild(useCodeBtn);
+                    }
+                    
+                    console.log('Botón usar código creado y agregado');
+                }
+            }
+            
+            // Intentar inicializar
+            setTimeout(initUseCodeButton, 100);
+            setTimeout(initUseCodeButton, 500);
+            setTimeout(initUseCodeButton, 1000);
         });
     </script>
 </body>

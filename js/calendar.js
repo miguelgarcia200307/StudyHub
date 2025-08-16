@@ -10,6 +10,30 @@ class CalendarManager {
         this.loadingState = false;
         this.currentView = 'dayGridMonth';
         
+        // Definir colores para estados de tareas
+        this.taskStatusColors = {
+            'pendiente': '#ffc107',     // Amarillo
+            'en_progreso': '#007bff',   // Azul
+            'terminado': '#6c757d'      // Gris
+        };
+        
+        // Definir colores para tipos de eventos
+        this.eventColors = {
+            'examen': '#dc3545',        // Rojo
+            'tarea': '#28a745',         // Verde
+            'reunion': '#6f42c1',       // Púrpura
+            'clase': '#fd7e14',         // Naranja
+            'other': '#6c757d'          // Gris por defecto
+        };
+        
+        // Definir colores para prioridades de tareas
+        this.taskColors = {
+            'alta': '#dc3545',          // Rojo
+            'media': '#ffc107',         // Amarillo
+            'baja': '#28a745',          // Verde
+            'medium': '#ffc107'         // Amarillo por defecto
+        };
+        
         // Esperar a que el DOM esté cargado
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', () => {
@@ -822,6 +846,11 @@ class CalendarManager {
 
     // Obtener color de la tarea
     getTaskColor(task) {
+        // Verificar que task existe y tiene propiedades básicas
+        if (!task || typeof task !== 'object') {
+            return this.taskColors.medium;
+        }
+        
         // Si está terminada, usar color gris
         if (task.estado === 'terminado') {
             return this.taskStatusColors.terminado;

@@ -204,6 +204,270 @@ class SubjectsManager {
         this.currentSubject = null;
     }
 
+    // Mostrar modal para gestionar colaboradores
+    async showCollaboratorsModal(subject) {
+        if (!subject || !window.dbManager) return;
+        
+        this.currentSubject = subject;
+        
+        try {
+            // Actualizar información de la asignatura
+            document.getElementById('collab-subject-name').textContent = subject.name;
+            document.getElementById('collab-subject-details').textContent = 
+                `${subject.professor} • ${subject.schedule}`;
+            
+            // Cargar colaboradores actuales
+            await this.loadCollaborators(subject.id);
+            
+            // Configurar formulario de invitación
+            this.setupInvitationForm(subject.id);
+            
+            // Mostrar modal
+            const modal = document.getElementById('collaborators-modal');
+            modal.classList.add('active');
+            
+        } catch (error) {
+            console.error('Error al cargar datos de colaboración:', error);
+            if (window.authManager) {
+                window.authManager.showErrorMessage('Error al cargar información de colaboradores');
+            }
+        }
+    }
+
+    // Cargar lista de colaboradores
+    async loadCollaborators(subjectId) {
+        try {
+            const collaborators = await window.dbManager.getSubjectCollaborators(subjectId);
+            this.renderCollaboratorsList(collaborators);
+            
+            // Cargar invitaciones pendientes
+            const pendingInvitations = await window.dbManager.getPendingSubjectInvitations(subjectId);
+            this.renderPendingInvitations(pendingInvitations);
+            
+        } catch (error) {
+            console.error('Error al cargar colaboradores:', error);
+        }
+    }
+
+    // Renderizar lista de colaboradores
+    renderCollaboratorsList(collaborators) {
+        const container = document.getElementById('collaborators-list');
+        
+        if (!collaborators || collaborators.length === 0) {
+            container.innerHTML = `
+                <div class="empty-state">
+                    <i class="fas fa-users"></i>
+                    <p>No hay colaboradores en esta asignatura</p>
+                </div>
+            `;
+            return;
+        }
+
+        container.innerHTML = collaborators.map(collaborator => `
+            <div class="collaborator-item">
+                <div class="collaborator-info">
+                    <div class="collaborator-avatar">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div class="collaborator-details">
+                        <h4>${collaborator.name}</h4>
+                        <p>@${collaborator.username || 'usuario'} • ${collaborator.email}</p>
+                        <span class="role-badge ${collaborator.role}">${collaborator.role === 'propietario' ? 'Propietario' : 'Colaborador'}</span>
+                    </div>
+                </div>
+                ${collaborator.role !== 'propietario' ? `
+                    <div class="collaborator-actions">
+                        <button type="button" class="btn btn-sm btn-outline btn-danger" 
+                                onclick="window.subjectsManager.removeCollaborator('${collaborator.id}', '${collaborator.name}')">
+                            <i class="fas fa-times"></i>
+                            Remover
+                        </button>
+                    </div>
+                ` : ''}
+            </div>
+        `).join('');
+    }
+
+    // Renderizar invitaciones pendientes
+    renderPendingInvitations(invitations) {
+        const container = document.getElementById('pending-invitations-list');
+        const section = container.closest('.pending-invitations-section');
+        
+        if (!invitations || invitations.length === 0) {
+            section.style.display = 'none';
+            return;
+        }
+
+        section.style.display = 'block';
+        container.innerHTML = invitations.map(invitation => `
+            <div class="pending-invitation-item">
+                <div class="invitation-info">
+                    <div class="invitation-target">
+                        <i class="fas fa-envelope"></i>
+                        <span>${invitation.target_email || invitation.target_username}</span>
+                    </div>
+                    <div class="invitation-date">
+                        <i class="fas fa-clock"></i>
+                        <span>Enviada ${new Date(invitation.created_at).toLocaleDateString()}</span>
+                    </div>
+                    ${invitation.message ? `<div class="invitation-message">"${invitation.message}"</div>` : ''}
+                </div>
+                <div class="invitation-actions">
+                    <button type="button" class="btn btn-sm btn-outline" 
+                            onclick="window.subjectsManager.copyInvitationLink('${invitation.codigo}')">
+                        <i class="fas fa-copy"></i>
+                        Copiar Link
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline btn-danger" 
+                            onclick="window.subjectsManager.cancelInvitation('${invitation.id}')">
+                        <i class="fas fa-times"></i>
+                        Cancelar
+                    </button>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    // Configurar formulario de invitación
+    setupInvitationForm(subjectId) {
+        const form = document.getElementById('invite-collaborator-form');
+        
+        // Remover listeners previos
+        const newForm = form.cloneNode(true);
+        form.parentNode.replaceChild(newForm, form);
+        
+        // Agregar nuevo listener
+        newForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            await this.sendSubjectInvitation(subjectId);
+        });
+    }
+
+    // Enviar invitación a colaborar en asignatura
+    async sendSubjectInvitation(subjectId) {
+        const target = document.getElementById('invite-target').value.trim();
+        const message = document.getElementById('invite-message').value.trim();
+        const button = document.querySelector('#invite-collaborator-form .btn-primary');
+        
+        if (!target) {
+            if (window.authManager) {
+                window.authManager.showErrorMessage('Por favor ingresa un email o username');
+            }
+            return;
+        }
+
+        try {
+            window.loadingManager.showButtonLoading(button);
+            
+            const result = await window.dbManager.createSubjectInvitation({
+                subjectId: subjectId,
+                target: target,
+                message: message
+            });
+
+            if (result.success) {
+                if (window.authManager) {
+                    window.authManager.showSuccessMessage(result.message);
+                }
+                
+                // Limpiar formulario
+                document.getElementById('invite-collaborator-form').reset();
+                
+                // Recargar listas
+                await this.loadCollaborators(subjectId);
+                
+            } else {
+                if (window.authManager) {
+                    window.authManager.showErrorMessage(result.error);
+                }
+            }
+            
+        } catch (error) {
+            console.error('Error al enviar invitación:', error);
+            if (window.authManager) {
+                window.authManager.showErrorMessage('Error al enviar la invitación');
+            }
+        } finally {
+            window.loadingManager.hideButtonLoading(button);
+        }
+    }
+
+    // Copiar link de invitación
+    copyInvitationLink(invitationCode) {
+        if (window.copySubjectInvitationLink) {
+            window.copySubjectInvitationLink(invitationCode);
+        }
+    }
+
+    // Remover colaborador
+    async removeCollaborator(collaboratorId, collaboratorName) {
+        if (!window.confirm(`¿Estás seguro de que quieres remover a ${collaboratorName} de esta asignatura?`)) {
+            return;
+        }
+
+        try {
+            const result = await window.dbManager.removeSubjectCollaborator(collaboratorId, this.currentSubject.id);
+            
+            if (result.success) {
+                if (window.authManager) {
+                    window.authManager.showSuccessMessage(result.message);
+                }
+                
+                // Recargar colaboradores
+                await this.loadCollaborators(this.currentSubject.id);
+                
+            } else {
+                if (window.authManager) {
+                    window.authManager.showErrorMessage(result.error);
+                }
+            }
+            
+        } catch (error) {
+            console.error('Error al remover colaborador:', error);
+            if (window.authManager) {
+                window.authManager.showErrorMessage('Error al remover colaborador');
+            }
+        }
+    }
+
+    // Cancelar invitación
+    async cancelInvitation(invitationId) {
+        if (!window.confirm('¿Estás seguro de que quieres cancelar esta invitación?')) {
+            return;
+        }
+
+        try {
+            const result = await window.dbManager.cancelSubjectInvitation(invitationId);
+            
+            if (result.success) {
+                if (window.authManager) {
+                    window.authManager.showSuccessMessage(result.message);
+                }
+                
+                // Recargar invitaciones pendientes
+                await this.loadCollaborators(this.currentSubject.id);
+                
+            } else {
+                if (window.authManager) {
+                    window.authManager.showErrorMessage(result.error);
+                }
+            }
+            
+        } catch (error) {
+            console.error('Error al cancelar invitación:', error);
+            if (window.authManager) {
+                window.authManager.showErrorMessage('Error al cancelar invitación');
+            }
+        }
+    }
+
+    // Cerrar modal de colaboradores
+    closeCollaboratorsModal() {
+        const modal = document.getElementById('collaborators-modal');
+        modal.classList.remove('active');
+        this.currentSubject = null;
+    }
+
     // Cargar asignaturas desde la base de datos
     async loadSubjects() {
         if (!window.dbManager) return;
@@ -325,6 +589,10 @@ class SubjectsManager {
                     <button class="action-btn" onclick="window.subjectsManager.editSubject('${subject.id}')">
                         <i class="fas fa-edit"></i>
                         Editar
+                    </button>
+                    <button class="action-btn" onclick="window.subjectsManager.showCollaboratorsModal(${JSON.stringify(subject).replace(/"/g, '&quot;')})">
+                        <i class="fas fa-users"></i>
+                        Colaboradores
                     </button>
                     <button class="action-btn primary" onclick="window.subjectsManager.goToSubjectTasks('${subject.id}')">
                         <i class="fas fa-tasks"></i>
@@ -529,3 +797,14 @@ class SubjectsManager {
 
 // Inicializar gestor de asignaturas
 window.subjectsManager = new SubjectsManager();
+
+// =================================================================
+// FUNCIONES GLOBALES PARA MODALES DE COLABORACIÓN
+// =================================================================
+
+// Función global para cerrar modal de colaboradores
+function closeCollaboratorsModal() {
+    if (window.subjectsManager) {
+        window.subjectsManager.closeCollaboratorsModal();
+    }
+}

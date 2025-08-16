@@ -1,0 +1,490 @@
+/* =================================================================
+   SISTEMA DE LOADING Y COMPONENTES RESPONSIVOS
+   ================================================================= */
+
+/* Loading Spinner Global */
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 10000;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+}
+
+.loading-overlay.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.loading-content {
+    background: white;
+    border-radius: 12px;
+    padding: 30px;
+    text-align: center;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    max-width: 300px;
+    width: 90%;
+}
+
+.loading-spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #667eea;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 15px;
+}
+
+.loading-text {
+    color: #333;
+    font-size: 16px;
+    font-weight: 500;
+}
+
+/* Spinner pequeño para botones */
+.btn .loading-spinner {
+    width: 16px;
+    height: 16px;
+    border-width: 2px;
+    margin: 0;
+    display: none;
+}
+
+.btn.loading .loading-spinner {
+    display: inline-block;
+}
+
+.btn.loading span,
+.btn.loading i:not(.loading-spinner) {
+    display: none;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* =================================================================
+   MEJORAS RESPONSIVAS - LAYOUT PRINCIPAL
+   ================================================================= */
+
+/* Variables CSS para consistencia */
+:root {
+    --sidebar-width: 280px;
+    --sidebar-width-mobile: 250px;
+    --header-height: 70px;
+    --mobile-breakpoint: 768px;
+    --tablet-breakpoint: 1024px;
+}
+
+/* Layout principal responsivo */
+.app {
+    display: flex;
+    min-height: 100vh;
+    position: relative;
+}
+
+/* Sidebar responsivo */
+.sidebar {
+    width: var(--sidebar-width);
+    min-width: var(--sidebar-width);
+    transition: transform 0.3s ease, width 0.3s ease;
+    position: fixed;
+    height: 100vh;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+}
+
+.main-content {
+    flex: 1;
+    margin-left: var(--sidebar-width);
+    transition: margin-left 0.3s ease;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Estados del sidebar */
+.sidebar.collapsed {
+    transform: translateX(-100%);
+}
+
+.sidebar.collapsed + .main-content {
+    margin-left: 0;
+}
+
+/* =================================================================
+   RESPONSIVE BREAKPOINTS
+   ================================================================= */
+
+/* Tablets y pantallas medianas */
+@media (max-width: 1024px) {
+    :root {
+        --sidebar-width: 250px;
+    }
+    
+    .dashboard-grid {
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 20px;
+    }
+    
+    .section-header {
+        flex-direction: column;
+        gap: 15px;
+        align-items: flex-start;
+    }
+    
+    .section-header .btn {
+        align-self: stretch;
+    }
+}
+
+/* Móviles */
+@media (max-width: 768px) {
+    :root {
+        --sidebar-width: var(--sidebar-width-mobile);
+        --header-height: 60px;
+    }
+    
+    /* Sidebar móvil */
+    .sidebar {
+        transform: translateX(-100%);
+        width: var(--sidebar-width-mobile);
+        min-width: var(--sidebar-width-mobile);
+    }
+    
+    .sidebar.mobile-open {
+        transform: translateX(0);
+    }
+    
+    .main-content {
+        margin-left: 0;
+    }
+    
+    /* Header móvil */
+    .header {
+        padding: 0 15px;
+        height: var(--header-height);
+    }
+    
+    .mobile-menu-toggle {
+        display: block !important;
+    }
+    
+    /* Dashboard móvil */
+    .dashboard-grid {
+        grid-template-columns: 1fr;
+        gap: 15px;
+        padding: 15px;
+    }
+    
+    /* Formularios móviles */
+    .modal-content {
+        width: 95%;
+        max-width: none;
+        margin: 10px;
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+    
+    .form-row {
+        flex-direction: column;
+    }
+    
+    .form-group {
+        margin-bottom: 15px;
+    }
+    
+    /* Botones móviles */
+    .btn {
+        padding: 12px 20px;
+        font-size: 14px;
+        min-height: 44px; /* Área de toque mínima */
+    }
+    
+    /* Cards móviles */
+    .card {
+        margin-bottom: 15px;
+        border-radius: 8px;
+    }
+    
+    /* Navegación móvil */
+    .sidebar-nav ul li a {
+        padding: 15px 20px;
+        font-size: 16px;
+    }
+    
+    /* Calendar móvil */
+    .calendar-container {
+        padding: 10px;
+    }
+    
+    #calendar {
+        font-size: 12px;
+    }
+}
+
+/* Móviles pequeños */
+@media (max-width: 480px) {
+    .dashboard-grid {
+        padding: 10px;
+        gap: 10px;
+    }
+    
+    .modal-content {
+        width: 98%;
+        margin: 5px;
+    }
+    
+    .btn {
+        padding: 10px 15px;
+        font-size: 13px;
+    }
+    
+    .form-group input,
+    .form-group textarea,
+    .form-group select {
+        font-size: 16px; /* Evita zoom en iOS */
+    }
+    
+    .stat-card {
+        padding: 15px;
+    }
+    
+    .section-header h2 {
+        font-size: 20px;
+    }
+}
+
+/* =================================================================
+   MEJORAS EN FORMULARIOS RESPONSIVOS
+   ================================================================= */
+
+.form-group {
+    position: relative;
+    margin-bottom: 20px;
+}
+
+.form-group input,
+.form-group textarea,
+.form-group select {
+    width: 100%;
+    padding: 12px 15px 12px 45px;
+    border: 2px solid #e1e5e9;
+    border-radius: 8px;
+    font-size: 14px;
+    transition: all 0.3s ease;
+    background: #fff;
+}
+
+.form-group input:focus,
+.form-group textarea:focus,
+.form-group select:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.form-group i {
+    position: absolute;
+    left: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #8e9aaf;
+    z-index: 1;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+    color: #2d3748;
+    font-size: 14px;
+}
+
+.form-help {
+    font-size: 12px;
+    color: #718096;
+    margin-top: 5px;
+    display: block;
+}
+
+/* =================================================================
+   SISTEMA DE NOTIFICACIONES RESPONSIVO
+   ================================================================= */
+
+.notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    min-width: 300px;
+    max-width: 400px;
+    padding: 15px 20px;
+    background: #27ae60;
+    color: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    z-index: 10001;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    animation: slideInRight 0.3s ease;
+    font-size: 14px;
+    line-height: 1.4;
+}
+
+.notification.error {
+    background: #e74c3c;
+}
+
+.notification.warning {
+    background: #f39c12;
+}
+
+.notification.info {
+    background: #3498db;
+}
+
+/* Notificaciones móviles */
+@media (max-width: 768px) {
+    .notification {
+        top: 10px;
+        right: 10px;
+        left: 10px;
+        min-width: auto;
+        max-width: none;
+        width: auto;
+        font-size: 13px;
+    }
+}
+
+@keyframes slideInRight {
+    from { 
+        transform: translateX(100%); 
+        opacity: 0; 
+    }
+    to { 
+        transform: translateX(0); 
+        opacity: 1; 
+    }
+}
+
+/* =================================================================
+   MEJORAS EN CARDS Y COMPONENTES
+   ================================================================= */
+
+.card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+    overflow: hidden;
+}
+
+.card:hover {
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+    transform: translateY(-2px);
+}
+
+/* Cards responsivos */
+@media (max-width: 768px) {
+    .card {
+        border-radius: 8px;
+        margin-bottom: 15px;
+    }
+    
+    .card:hover {
+        transform: none; /* Deshabilitar hover en móvil */
+    }
+}
+
+/* =================================================================
+   UTILIDADES RESPONSIVAS
+   ================================================================= */
+
+/* Ocultar/mostrar elementos según pantalla */
+.mobile-only {
+    display: none;
+}
+
+.desktop-only {
+    display: block;
+}
+
+@media (max-width: 768px) {
+    .mobile-only {
+        display: block;
+    }
+    
+    .desktop-only {
+        display: none;
+    }
+    
+    .mobile-hidden {
+        display: none !important;
+    }
+    
+    .mobile-flex {
+        display: flex !important;
+    }
+}
+
+/* Espaciado responsivo */
+.spacing-mobile {
+    padding: 15px;
+}
+
+@media (min-width: 769px) {
+    .spacing-mobile {
+        padding: 30px;
+    }
+}
+
+/* Texto responsivo */
+.text-responsive {
+    font-size: 14px;
+}
+
+@media (min-width: 769px) {
+    .text-responsive {
+        font-size: 16px;
+    }
+}
+
+/* =================================================================
+   OVERLAY PARA SIDEBAR MÓVIL
+   ================================================================= */
+
+.sidebar-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 999;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+}
+
+.sidebar-overlay.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+@media (min-width: 769px) {
+    .sidebar-overlay {
+        display: none;
+    }
+}

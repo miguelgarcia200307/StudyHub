@@ -562,3 +562,216 @@
 [data-theme="dark"] .invite-notice {
     background: rgba(52, 152, 219, 0.15);
 }
+
+/* =================================================================
+   REGISTRO DE DOS PASOS
+================================================================= */
+
+/* Indicador de pasos */
+.step-indicator {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 25px;
+    gap: 15px;
+}
+
+.step {
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    background: var(--login-border);
+    color: var(--login-gray);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 14px;
+    transition: var(--login-transition);
+}
+
+.step.active {
+    background: var(--login-accent);
+    color: white;
+}
+
+.step.completed {
+    background: #27ae60;
+    color: white;
+}
+
+.step-divider {
+    width: 40px;
+    height: 2px;
+    background: var(--login-border);
+    transition: var(--login-transition);
+}
+
+.step-divider.completed {
+    background: #27ae60;
+}
+
+/* Pasos del registro */
+.register-step {
+    display: none;
+}
+
+.register-step.active {
+    display: block;
+    animation: fadeInSlide 0.4s ease-out;
+}
+
+@keyframes fadeInSlide {
+    from {
+        opacity: 0;
+        transform: translateX(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.register-step h3 {
+    color: var(--login-dark);
+    font-size: 20px;
+    font-weight: 600;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+/* Contenedor de contraseña con toggle */
+.password-input-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.password-input-container input {
+    padding-right: 45px !important;
+}
+
+.password-toggle {
+    position: absolute;
+    right: 12px;
+    background: none;
+    border: none;
+    color: var(--login-gray);
+    cursor: pointer;
+    padding: 5px;
+    transition: var(--login-transition);
+}
+
+.password-toggle:hover {
+    color: var(--login-accent);
+}
+
+/* Medidor de fuerza de contraseña */
+.password-strength {
+    margin-top: 8px;
+}
+
+.strength-meter {
+    width: 100%;
+    height: 4px;
+    background: var(--login-border);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-bottom: 5px;
+}
+
+.strength-bar {
+    height: 100%;
+    width: 0%;
+    transition: all 0.3s ease;
+    border-radius: 2px;
+}
+
+.strength-bar.weak {
+    background: #e74c3c;
+    width: 33.33%;
+}
+
+.strength-bar.medium {
+    background: #f39c12;
+    width: 66.66%;
+}
+
+.strength-bar.strong {
+    background: #27ae60;
+    width: 100%;
+}
+
+.strength-text {
+    font-size: 12px;
+    color: var(--login-gray);
+    display: block;
+}
+
+.strength-text.weak {
+    color: #e74c3c;
+}
+
+.strength-text.medium {
+    color: #f39c12;
+}
+
+.strength-text.strong {
+    color: #27ae60;
+}
+
+/* Indicador de coincidencia de contraseñas */
+.password-match {
+    margin-top: 5px;
+    font-size: 12px;
+    min-height: 16px;
+}
+
+.password-match.match {
+    color: #27ae60;
+}
+
+.password-match.no-match {
+    color: #e74c3c;
+}
+
+/* Acciones del formulario */
+.form-actions {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+}
+
+.form-actions .btn {
+    flex: 1;
+}
+
+.form-actions .btn-outline {
+    flex: 0 0 auto;
+    min-width: 100px;
+}
+
+/* Responsive para pasos */
+@media (max-width: 768px) {
+    .step-indicator {
+        gap: 10px;
+    }
+    
+    .step {
+        width: 30px;
+        height: 30px;
+        font-size: 12px;
+    }
+    
+    .step-divider {
+        width: 30px;
+    }
+    
+    .form-actions {
+        flex-direction: column;
+    }
+    
+    .form-actions .btn {
+        width: 100%;
+    }
+}

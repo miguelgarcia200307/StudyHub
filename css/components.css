@@ -804,3 +804,321 @@
 .component-blur { backdrop-filter: blur(10px); }
 .component-blur-sm { backdrop-filter: blur(5px); }
 .component-blur-lg { backdrop-filter: blur(15px); }
+
+/* =================================================================
+   PESTAÑAS DE INVITACIÓN
+================================================================= */
+.section-description {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    margin-bottom: 1.5rem;
+    line-height: 1.4;
+}
+
+.invite-tabs {
+    display: flex;
+    background: var(--bg-secondary);
+    border-radius: 8px;
+    padding: 4px;
+    margin-bottom: 1rem;
+    gap: 4px;
+}
+
+.invite-tab {
+    flex: 1;
+    padding: 0.75rem 1rem;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    font-weight: 500;
+}
+
+.invite-tab:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+}
+
+.invite-tab.active {
+    background: var(--primary-color);
+    color: white;
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+}
+
+.invite-tab i {
+    font-size: 0.9rem;
+}
+
+.invite-tab-content {
+    display: none;
+}
+
+.invite-tab-content.active {
+    display: block;
+}
+
+/* =================================================================
+   CÓDIGO DE ACCESO GENERADO
+================================================================= */
+.generated-code {
+    margin-top: 1rem;
+    padding: 1rem;
+    background: var(--bg-secondary);
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+}
+
+.code-display {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.code-display label {
+    font-weight: 600;
+    color: var(--text-primary);
+    font-size: 0.9rem;
+}
+
+.code-value {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem;
+    background: var(--bg-primary);
+    border: 2px solid var(--primary-color);
+    border-radius: 6px;
+    margin: 0.5rem 0;
+}
+
+.code-value span {
+    font-family: 'Courier New', monospace;
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: var(--primary-color);
+    letter-spacing: 2px;
+    flex: 1;
+}
+
+.code-value .btn {
+    padding: 0.5rem 1rem;
+    font-size: 0.85rem;
+}
+
+/* =================================================================
+   ACCIONES DE HEADER
+================================================================= */
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.header-actions .btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* Asegurar visibilidad del botón usar código */
+#use-access-code-btn {
+    display: flex !important;
+    align-items: center;
+    gap: 0.5rem;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: 2px solid transparent;
+    padding: 0.7rem 1.2rem;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+#use-access-code-btn:hover {
+    background: linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+#use-access-code-btn i {
+    font-size: 1rem;
+}
+
+/* Asegurar que el header actions sea visible */
+.header-actions {
+    display: flex !important;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+/* Estilo para el botón superior global (asegurar visibilidad) */
+#use-access-code-topbtn {
+    display: inline-flex !important;
+    align-items: center;
+    gap: 0.5rem;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: 2px solid transparent;
+    padding: 0.6rem 1rem;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+    text-transform: uppercase;
+}
+
+#use-access-code-topbtn i {
+    font-size: 1rem;
+}
+
+#use-access-code-topbtn:hover {
+    background: linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%);
+    transform: translateY(-2px);
+}
+
+.header-actions .btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    white-space: nowrap;
+}
+
+/* =================================================================
+   MODAL PEQUEÑO PARA CÓDIGOS
+================================================================= */
+.modal-small .modal-content {
+    max-width: 480px;
+}
+
+.modal-description {
+    color: var(--text-secondary);
+    margin-bottom: 1.5rem;
+    line-height: 1.5;
+}
+
+/* =================================================================
+   FORMATEO DE CÓDIGO EN INPUT
+================================================================= */
+#access-code-input {
+    text-align: center;
+    font-family: 'Courier New', monospace;
+    font-size: 1.1rem;
+    letter-spacing: 1px;
+    font-weight: 600;
+}
+
+#access-code-input::placeholder {
+    letter-spacing: 1px;
+    opacity: 0.5;
+}
+
+/* =================================================================
+   CÓDIGOS DE ACCESO ACTIVOS
+================================================================= */
+.active-codes-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.active-code-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    transition: all 0.2s ease;
+}
+
+.active-code-item:hover {
+    border-color: var(--primary-color);
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.1);
+}
+
+.code-info {
+    flex: 1;
+}
+
+.code-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.5rem;
+}
+
+.code-text {
+    font-family: 'Courier New', monospace;
+    font-size: 1.1rem;
+    font-weight: bold;
+    color: var(--primary-color);
+    letter-spacing: 1px;
+    padding: 0.25rem 0.5rem;
+    background: rgba(102, 126, 234, 0.1);
+    border-radius: 4px;
+}
+
+.code-details {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    font-size: 0.85rem;
+}
+
+.code-expiry {
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.code-expiry.expiring {
+    color: var(--state-warning);
+    font-weight: 600;
+}
+
+.code-message {
+    color: var(--text-secondary);
+    font-style: italic;
+}
+
+.code-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 2rem 1rem;
+    color: var(--text-secondary);
+}
+
+.empty-state i {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+    opacity: 0.5;
+}
+
+.empty-state p {
+    margin-bottom: 0.25rem;
+    font-weight: 500;
+}
+
+.empty-state small {
+    opacity: 0.7;
+}

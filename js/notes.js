@@ -28,6 +28,27 @@ class NotesManager {
             });
         }
 
+        // Event delegation para botones de notas
+        document.addEventListener('click', (e) => {
+            // Botón eliminar nota
+            if (e.target.closest('.note-delete-btn')) {
+                e.stopPropagation();
+                const btn = e.target.closest('.note-delete-btn');
+                const noteId = btn.getAttribute('data-note-id');
+                this.deleteNote(noteId);
+                return;
+            }
+
+            // Botón editar nota
+            if (e.target.closest('.note-edit-btn')) {
+                e.stopPropagation();
+                const btn = e.target.closest('.note-edit-btn');
+                const noteId = btn.getAttribute('data-note-id');
+                this.editNoteById(noteId);
+                return;
+            }
+        });
+
         // Buscador de notas
         const notesSearch = document.getElementById('notes-search');
         if (notesSearch) {
@@ -196,10 +217,10 @@ class NotesManager {
                     </div>
                 </div>
                 <div class="note-actions">
-                    <button class="btn-icon" onclick="event.stopPropagation(); window.notesManager.showNoteModal(${JSON.stringify(note).replace(/"/g, '&quot;')})" title="Editar">
+                    <button class="btn-icon note-edit-btn" data-note-id="${note.id}" title="Editar">
                         <i class="fas fa-edit"></i>
                     </button>
-                    <button class="btn-icon btn-danger" onclick="event.stopPropagation(); window.notesManager.deleteNote(${note.id})" title="Eliminar">
+                    <button class="btn-icon btn-danger note-delete-btn" data-note-id="${note.id}" title="Eliminar">
                         <i class="fas fa-trash"></i>
                     </button>
                 </div>
@@ -246,6 +267,23 @@ class NotesManager {
             window.authManager.showSuccessMessage('Nota eliminada correctamente');
         } else {
             window.authManager.showErrorMessage(result.error);
+        }
+    }
+
+    // Editar nota por ID
+    async editNoteById(noteId) {
+        try {
+            const notes = await window.dbManager.loadNotes();
+            const note = notes.find(n => n.id == noteId);
+            
+            if (note) {
+                this.showNoteModal(note);
+            } else {
+                window.authManager.showErrorMessage('No se pudo encontrar la nota');
+            }
+        } catch (error) {
+            console.error('Error al cargar nota para editar:', error);
+            window.authManager.showErrorMessage('Error al cargar la nota');
         }
     }
 
