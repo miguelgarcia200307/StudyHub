@@ -1,0 +1,1698 @@
+/* =================================================================
+   OPTIMIZACIONES MÓVILES - StudyHub
+   Usando dvh para mejor ajuste dinámico en dispositivos móviles
+   Considera la barra del navegador y muestra la altura real de la ventana
+================================================================= */
+
+/* =================================================================
+   VARIABLES MÓVILES CON DVH
+================================================================= */
+:root {
+    /* Altura dinámica de viewport que considera barras del navegador */
+    --mobile-vh: 1dvh;
+    --mobile-full-height: 100dvh;
+    --mobile-half-height: 50dvh;
+    --mobile-third-height: 33.33dvh;
+    --mobile-quarter-height: 25dvh;
+    
+    /* Espaciado optimizado para móviles */
+    --mobile-padding-xs: 0.5rem;
+    --mobile-padding-sm: 1rem;
+    --mobile-padding-md: 1.5rem;
+    --mobile-padding-lg: 2rem;
+    
+    /* Tamaños de fuente escalables */
+    --mobile-font-xs: 0.75rem;
+    --mobile-font-sm: 0.875rem;
+    --mobile-font-md: 1rem;
+    --mobile-font-lg: 1.125rem;
+    --mobile-font-xl: 1.25rem;
+    --mobile-font-2xl: 1.5rem;
+    --mobile-font-3xl: 2rem;
+    
+    /* Elementos interactivos */
+    --mobile-touch-target: 44px;
+    --mobile-input-height: 48px;
+    --mobile-button-height: 50px;
+}
+
+/* =================================================================
+   OPTIMIZACIONES ESPECÍFICAS PARA LOGIN/REGISTRO
+================================================================= */
+
+/* Pantallas grandes (tablets en landscape) */
+@media (max-width: 1024px) and (min-height: 600px) {
+    #auth-modal {
+        height: var(--mobile-full-height);
+        min-height: var(--mobile-full-height);
+    }
+    
+    #auth-modal .modal-content {
+        height: var(--mobile-full-height);
+        max-height: var(--mobile-full-height);
+        width: 100%;
+        max-width: 100%;
+    }
+    
+    .auth-container {
+        flex-direction: column;
+        height: var(--mobile-full-height);
+        min-height: var(--mobile-full-height);
+        overflow: hidden;
+    }
+    
+    .auth-left {
+        flex: none;
+        height: 35dvh;
+        min-height: 200px;
+        max-height: 35dvh;
+        padding: var(--mobile-padding-md) var(--mobile-padding-sm);
+        overflow: hidden;
+    }
+    
+    .auth-left .logo {
+        width: 120px;
+        height: 120px;
+        margin-bottom: var(--mobile-padding-sm);
+        flex-shrink: 0;
+    }
+    
+    .auth-left h1 {
+        font-size: var(--mobile-font-3xl);
+        margin-bottom: var(--mobile-padding-xs);
+        line-height: 1.2;
+    }
+    
+    .auth-left p {
+        font-size: var(--mobile-font-lg);
+        margin: 0;
+        text-align: center;
+        max-width: 100%;
+    }
+    
+    .auth-right {
+        flex: 1;
+        height: 65dvh;
+        min-height: 400px;
+        padding: var(--mobile-padding-md) var(--mobile-padding-sm);
+        overflow-y: auto;
+        overflow-x: hidden;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+    }
+    
+    /* Ajustes específicos para registro */
+    #register-form .auth-left {
+        height: 25dvh;
+        min-height: 150px;
+    }
+    
+    #register-form .auth-right {
+        height: 75dvh;
+        min-height: 500px;
+    }
+}
+
+/* Móviles en portrait y landscape */
+@media (max-width: 768px) {
+    #auth-modal {
+        height: var(--mobile-full-height);
+        min-height: var(--mobile-full-height);
+        padding: 0;
+    }
+    
+    #auth-modal .modal-content {
+        width: 100%;
+        height: var(--mobile-full-height);
+        max-width: 100%;
+        max-height: var(--mobile-full-height);
+        border-radius: 0;
+    }
+    
+    .auth-container {
+        flex-direction: column;
+        height: var(--mobile-full-height);
+        min-height: var(--mobile-full-height);
+        border-radius: 0;
+        overflow: hidden;
+    }
+    
+    .auth-left {
+        flex: none;
+        height: 30dvh;
+        min-height: 180px;
+        max-height: 30dvh;
+        padding: var(--mobile-padding-sm);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .auth-left .logo {
+        width: 100px;
+        height: 100px;
+        margin-bottom: var(--mobile-padding-xs);
+        flex-shrink: 0;
+    }
+    
+    .auth-left h1 {
+        font-size: var(--mobile-font-2xl);
+        margin-bottom: var(--mobile-padding-xs);
+        text-align: center;
+        line-height: 1.1;
+    }
+    
+    .auth-left p {
+        font-size: var(--mobile-font-md);
+        text-align: center;
+        margin: 0;
+        line-height: 1.3;
+        max-width: 280px;
+    }
+    
+    .auth-right {
+        flex: 1;
+        height: 70dvh;
+        min-height: 400px;
+        padding: var(--mobile-padding-sm);
+        overflow-y: auto;
+        overflow-x: hidden;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    .auth-form {
+        width: 100%;
+        max-width: 100%;
+        margin: 0;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+    }
+    
+    .auth-form h2 {
+        font-size: var(--mobile-font-2xl);
+        margin-bottom: var(--mobile-padding-xs);
+        text-align: center;
+    }
+    
+    .auth-form .subtitle {
+        font-size: var(--mobile-font-md);
+        margin-bottom: var(--mobile-padding-md);
+        text-align: center;
+    }
+    
+    /* Optimización de formularios para móvil */
+    .form-group {
+        margin-bottom: var(--mobile-padding-sm);
+    }
+    
+    .form-group input {
+        height: var(--mobile-input-height);
+        padding: 0 var(--mobile-padding-sm) 0 45px;
+        font-size: var(--mobile-font-md);
+        border-radius: 8px;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        appearance: none;
+    }
+    
+    .form-group i {
+        left: var(--mobile-padding-sm);
+        font-size: var(--mobile-font-lg);
+    }
+    
+    .auth-form .btn {
+        height: var(--mobile-button-height);
+        min-height: var(--mobile-touch-target);
+        padding: 0 var(--mobile-padding-md);
+        font-size: var(--mobile-font-lg);
+        font-weight: 600;
+        border-radius: 8px;
+        margin-top: var(--mobile-padding-sm);
+        touch-action: manipulation;
+    }
+    
+    /* Ajustes específicos para registro en móvil */
+    #register-form .auth-left {
+        height: 20dvh;
+        min-height: 120px;
+        padding: var(--mobile-padding-xs);
+    }
+    
+    #register-form .auth-left .logo {
+        width: 80px;
+        height: 80px;
+        margin-bottom: 5px;
+    }
+    
+    #register-form .auth-left h1 {
+        font-size: var(--mobile-font-xl);
+        margin-bottom: 2px;
+    }
+    
+    #register-form .auth-left p {
+        font-size: var(--mobile-font-sm);
+        line-height: 1.2;
+    }
+    
+    #register-form .auth-right {
+        height: 80dvh;
+        min-height: 500px;
+        padding: var(--mobile-padding-sm);
+    }
+    
+    /* Pasos del registro optimizados */
+    .step-indicator {
+        margin-bottom: var(--mobile-padding-sm);
+        gap: var(--mobile-padding-xs);
+    }
+    
+    .step {
+        width: 32px;
+        height: 32px;
+        font-size: var(--mobile-font-sm);
+    }
+    
+    .step-divider {
+        width: 30px;
+        height: 2px;
+    }
+    
+    .register-step h3 {
+        font-size: var(--mobile-font-lg);
+        margin-bottom: var(--mobile-padding-sm);
+    }
+    
+    /* Formulario de registro compacto */
+    #register-form .form-group {
+        margin-bottom: 12px;
+    }
+    
+    #register-form .auth-form h2 {
+        font-size: var(--mobile-font-xl);
+        margin-bottom: 8px;
+    }
+    
+    #register-form .subtitle {
+        font-size: var(--mobile-font-sm);
+        margin-bottom: var(--mobile-padding-sm);
+    }
+    
+    /* Controles de contraseña optimizados */
+    .password-input-container {
+        position: relative;
+        display: flex;
+        align-items: center;
+    }
+    
+    .password-toggle {
+        position: absolute;
+        right: var(--mobile-padding-sm);
+        background: none;
+        border: none;
+        color: var(--login-gray);
+        cursor: pointer;
+        padding: var(--mobile-padding-xs);
+        min-height: var(--mobile-touch-target);
+        min-width: var(--mobile-touch-target);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        touch-action: manipulation;
+    }
+    
+    .password-strength {
+        margin-top: 8px;
+    }
+    
+    .strength-meter {
+        height: 3px;
+        margin-bottom: 4px;
+    }
+    
+    .strength-text {
+        font-size: var(--mobile-font-xs);
+    }
+    
+    .password-match {
+        font-size: var(--mobile-font-xs);
+        margin-top: 4px;
+    }
+    
+    /* Información de autenticación compacta */
+    .auth-info {
+        padding: var(--mobile-padding-sm);
+        margin-top: var(--mobile-padding-sm);
+        font-size: var(--mobile-font-sm);
+        border-radius: 8px;
+    }
+    
+    .auth-switch {
+        margin-top: var(--mobile-padding-sm);
+        font-size: var(--mobile-font-sm);
+    }
+    
+    /* Notificaciones optimizadas */
+    .invite-notice,
+    .register-notice {
+        padding: var(--mobile-padding-sm);
+        margin-bottom: var(--mobile-padding-sm);
+        border-radius: 8px;
+    }
+    
+    .invite-notice i,
+    .register-notice i {
+        font-size: var(--mobile-font-xl);
+        margin-bottom: var(--mobile-padding-xs);
+    }
+    
+    .invite-notice p,
+    .register-notice p {
+        font-size: var(--mobile-font-sm);
+        margin: 0;
+    }
+}
+
+/* Móviles pequeños (iPhone SE, etc.) */
+@media (max-width: 480px) {
+    .auth-left {
+        height: 25dvh;
+        min-height: 150px;
+        max-height: 25dvh;
+        padding: var(--mobile-padding-xs);
+    }
+    
+    .auth-left .logo {
+        width: 80px;
+        height: 80px;
+        margin-bottom: 5px;
+    }
+    
+    .auth-left h1 {
+        font-size: var(--mobile-font-xl);
+        margin-bottom: 2px;
+    }
+    
+    .auth-left p {
+        font-size: var(--mobile-font-sm);
+        line-height: 1.2;
+        max-width: 220px;
+    }
+    
+    .auth-right {
+        height: 75dvh;
+        min-height: 400px;
+        padding: var(--mobile-padding-xs);
+    }
+    
+    .auth-form h2 {
+        font-size: var(--mobile-font-xl);
+        margin-bottom: 5px;
+    }
+    
+    .auth-form .subtitle {
+        font-size: var(--mobile-font-sm);
+        margin-bottom: var(--mobile-padding-sm);
+    }
+    
+    .form-group {
+        margin-bottom: 12px;
+    }
+    
+    .form-group input {
+        height: 44px;
+        padding: 0 12px 0 40px;
+        font-size: var(--mobile-font-md);
+        border-radius: 6px;
+    }
+    
+    .form-group i {
+        left: 12px;
+        font-size: var(--mobile-font-md);
+    }
+    
+    .auth-form .btn {
+        height: 46px;
+        font-size: var(--mobile-font-md);
+        border-radius: 6px;
+        margin-top: 12px;
+    }
+    
+    /* Registro ultra compacto */
+    #register-form .auth-left {
+        height: 18dvh;
+        min-height: 100px;
+        padding: 8px;
+    }
+    
+    #register-form .auth-left .logo {
+        width: 60px;
+        height: 60px;
+        margin-bottom: 2px;
+    }
+    
+    #register-form .auth-left h1 {
+        font-size: var(--mobile-font-lg);
+        margin-bottom: 0;
+    }
+    
+    #register-form .auth-left p {
+        font-size: var(--mobile-font-xs);
+        line-height: 1.1;
+        max-width: 180px;
+    }
+    
+    #register-form .auth-right {
+        height: 82dvh;
+        min-height: 450px;
+        padding: var(--mobile-padding-xs);
+    }
+    
+    #register-form .form-group {
+        margin-bottom: 10px;
+    }
+    
+    #register-form .auth-form h2 {
+        font-size: var(--mobile-font-lg);
+        margin-bottom: 5px;
+    }
+    
+    #register-form .subtitle {
+        font-size: var(--mobile-font-xs);
+        margin-bottom: 12px;
+    }
+    
+    .step-indicator {
+        margin-bottom: 12px;
+        gap: 8px;
+    }
+    
+    .step {
+        width: 28px;
+        height: 28px;
+        font-size: 12px;
+    }
+    
+    .step-divider {
+        width: 25px;
+    }
+    
+    .register-step h3 {
+        font-size: var(--mobile-font-md);
+        margin-bottom: 12px;
+    }
+    
+    /* Acciones del formulario optimizadas */
+    .form-actions {
+        display: flex;
+        flex-direction: column;
+        gap: var(--mobile-padding-sm);
+        width: 100%;
+        margin-top: var(--mobile-padding-sm);
+    }
+    
+    .form-actions .btn {
+        width: 100%;
+        margin: 0;
+        order: 1; /* Botón principal primero */
+    }
+    
+    .form-actions .btn-outline {
+        order: 2; /* Botón secundario después */
+        background: transparent;
+        border: 2px solid var(--login-border);
+        color: var(--login-gray);
+        font-weight: 500;
+    }
+    
+    .form-actions .btn-outline:hover {
+        background: var(--login-border);
+        color: var(--login-dark);
+        transform: none;
+        box-shadow: none;
+    }
+    
+    /* Botón principal siempre prominente */
+    .form-actions .btn-primary {
+        background: var(--login-accent);
+        color: var(--login-primary);
+        font-weight: 600;
+        order: 1;
+    }
+}
+
+/* =================================================================
+   OPTIMIZACIONES ESPECÍFICAS PARA LANDSCAPE EN MÓVILES
+================================================================= */
+
+@media (max-width: 900px) and (max-height: 500px) and (orientation: landscape) {
+    .auth-container {
+        flex-direction: row;
+        height: var(--mobile-full-height);
+    }
+    
+    .auth-left {
+        flex: 0 0 40%;
+        height: var(--mobile-full-height);
+        max-height: var(--mobile-full-height);
+        padding: var(--mobile-padding-sm);
+    }
+    
+    .auth-left .logo {
+        width: 80px;
+        height: 80px;
+        margin-bottom: var(--mobile-padding-xs);
+    }
+    
+    .auth-left h1 {
+        font-size: var(--mobile-font-xl);
+        margin-bottom: 5px;
+    }
+    
+    .auth-left p {
+        font-size: var(--mobile-font-sm);
+        line-height: 1.2;
+    }
+    
+    .auth-right {
+        flex: 1;
+        height: var(--mobile-full-height);
+        max-height: var(--mobile-full-height);
+        padding: var(--mobile-padding-sm);
+        overflow-y: auto;
+    }
+    
+    /* Formularios más compactos en landscape */
+    .auth-form h2 {
+        font-size: var(--mobile-font-xl);
+        margin-bottom: 5px;
+    }
+    
+    .auth-form .subtitle {
+        font-size: var(--mobile-font-sm);
+        margin-bottom: 15px;
+    }
+    
+    .form-group {
+        margin-bottom: 12px;
+    }
+    
+    .form-group input {
+        height: 40px;
+        padding: 0 12px 0 35px;
+        font-size: var(--mobile-font-sm);
+    }
+    
+    .form-group i {
+        left: 12px;
+        font-size: var(--mobile-font-md);
+    }
+    
+    .auth-form .btn {
+        height: 42px;
+        font-size: var(--mobile-font-md);
+        margin-top: 10px;
+    }
+    
+    /* Registro en landscape - aún más compacto */
+    #register-form .step-indicator {
+        margin-bottom: 10px;
+    }
+    
+    #register-form .register-step h3 {
+        font-size: var(--mobile-font-md);
+        margin-bottom: 10px;
+    }
+    
+    #register-form .form-group {
+        margin-bottom: 8px;
+    }
+}
+
+/* =================================================================
+   OPTIMIZACIONES AVANZADAS DE DISEÑO Y UX
+================================================================= */
+
+/* Mejoras generales de layout */
+@media (max-width: 768px) {
+    /* Espaciado consistente entre elementos */
+    .auth-form > * {
+        margin-bottom: var(--mobile-padding-sm);
+    }
+    
+    .auth-form > *:last-child {
+        margin-bottom: 0;
+    }
+    
+    /* Mejorar legibilidad de textos */
+    .auth-form .subtitle {
+        line-height: 1.4;
+        opacity: 0.8;
+    }
+    
+    /* Optimizar notice/info boxes */
+    .register-notice,
+    .invite-notice {
+        text-align: center;
+        line-height: 1.4;
+    }
+    
+    .register-notice p,
+    .invite-notice p {
+        font-weight: 500;
+    }
+    
+    /* Mejorar indicadores de paso */
+    .step-indicator {
+        justify-content: center;
+        align-items: center;
+        padding: 0 var(--mobile-padding-sm);
+    }
+    
+    .step {
+        flex-shrink: 0;
+        font-weight: 700;
+        transition: all 0.3s ease;
+    }
+    
+    .step.active {
+        transform: scale(1.1);
+        box-shadow: 0 2px 8px rgba(52, 152, 219, 0.3);
+    }
+    
+    .step-divider {
+        flex: 1;
+        max-width: 40px;
+        margin: 0 8px;
+    }
+    
+    /* Mejorar campos de formulario */
+    .form-group {
+        position: relative;
+    }
+    
+    .form-group input {
+        border: 2px solid var(--login-border);
+        transition: all 0.3s ease;
+        background: #fafafa;
+    }
+    
+    .form-group input:focus {
+        background: white;
+        border-color: var(--login-accent);
+        box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+        transform: translateY(-1px);
+    }
+    
+    .form-group i {
+        transition: all 0.3s ease;
+        opacity: 0.6;
+    }
+    
+    .form-group input:focus + i {
+        opacity: 1;
+        color: var(--login-accent);
+        transform: translateY(-50%) scale(1.1);
+    }
+    
+    /* Mejorar textos de ayuda */
+    .form-help {
+        font-weight: 400;
+        line-height: 1.3;
+        margin-top: 6px;
+        padding-left: 0;
+        text-align: center;
+        opacity: 0.7;
+    }
+    
+    /* Optimizar botones */
+    .auth-form .btn {
+        font-weight: 600;
+        letter-spacing: 0.025em;
+        transition: all 0.3s ease;
+        border: none;
+        cursor: pointer;
+    }
+    
+    .auth-form .btn:active {
+        transform: translateY(1px);
+    }
+    
+    .auth-form .btn i {
+        margin-right: 8px;
+        font-size: 0.9em;
+    }
+    
+    /* Estados de botón mejorados */
+    .auth-form .btn.loading {
+        position: relative;
+        color: transparent;
+    }
+    
+    .auth-form .btn.loading::after {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 16px;
+        height: 16px;
+        margin: -8px 0 0 -8px;
+        border: 2px solid transparent;
+        border-top: 2px solid currentColor;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+        color: white;
+    }
+}
+
+/* Optimizaciones específicas para formularios */
+@media (max-width: 768px) {
+    /* Paso de registro optimizado */
+    .register-step {
+        padding: 0;
+        animation: fadeIn 0.5s ease;
+    }
+    
+    .register-step h3 {
+        text-align: center;
+        color: var(--login-dark);
+        font-weight: 600;
+        margin-bottom: var(--mobile-padding-sm);
+    }
+    
+    /* Medidor de contraseña mejorado */
+    .password-strength {
+        margin-top: 8px;
+        padding: 0 4px;
+    }
+    
+    .strength-meter {
+        background: #f0f0f0;
+        border-radius: 4px;
+        overflow: hidden;
+        height: 4px;
+        margin-bottom: 6px;
+    }
+    
+    .strength-bar {
+        height: 100%;
+        border-radius: 4px;
+        transition: all 0.4s ease;
+    }
+    
+    .strength-text {
+        display: block;
+        font-weight: 500;
+        text-align: center;
+    }
+    
+    /* Indicador de coincidencia de contraseñas */
+    .password-match {
+        text-align: center;
+        font-weight: 500;
+        margin-top: 6px;
+        min-height: 18px;
+        font-size: var(--mobile-font-xs);
+    }
+    
+    .password-match.match {
+        color: #27ae60;
+    }
+    
+    .password-match.no-match {
+        color: #e74c3c;
+    }
+    
+    /* Contenedor de contraseña optimizado */
+    .password-input-container {
+        display: flex;
+        align-items: center;
+        position: relative;
+    }
+    
+    .password-input-container input {
+        flex: 1;
+        padding-right: 50px !important;
+    }
+    
+    .password-toggle {
+        position: absolute;
+        right: 12px;
+        background: none;
+        border: none;
+        color: var(--login-gray);
+        cursor: pointer;
+        padding: 8px;
+        border-radius: 4px;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 36px;
+        min-height: 36px;
+    }
+    
+    .password-toggle:hover {
+        background: rgba(52, 152, 219, 0.1);
+        color: var(--login-accent);
+    }
+    
+    .password-toggle:active {
+        transform: scale(0.95);
+    }
+}
+
+/* Animaciones suaves */
+@media (max-width: 768px) {
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    @keyframes slideIn {
+        from {
+            opacity: 0;
+            transform: translateX(-20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    }
+    
+    /* Aplicar animaciones suaves */
+    .auth-form.active {
+        animation: fadeIn 0.6s ease;
+    }
+    
+    .form-group {
+        animation: slideIn 0.4s ease;
+        animation-fill-mode: both;
+    }
+    
+    .form-group:nth-child(1) { animation-delay: 0.1s; }
+    .form-group:nth-child(2) { animation-delay: 0.2s; }
+    .form-group:nth-child(3) { animation-delay: 0.3s; }
+    .form-group:nth-child(4) { animation-delay: 0.4s; }
+}
+
+/* =================================================================
+   OPTIMIZACIONES FINALES DE LAYOUT Y CONSISTENCIA
+================================================================= */
+
+/* Consistencia en todos los dispositivos */
+@media (max-width: 1024px) {
+    /* Espaciado consistente en tablets */
+    .auth-form {
+        padding: 0;
+        margin: 0;
+    }
+    
+    .auth-form > * {
+        margin-bottom: 20px;
+    }
+    
+    .auth-form > *:last-child {
+        margin-bottom: 0;
+    }
+    
+    /* Botones de acción mejorados */
+    .auth-actions {
+        margin-top: 25px;
+        padding-top: 20px;
+        border-top: 1px solid var(--login-border);
+    }
+    
+    .auth-actions .btn {
+        height: 50px;
+        font-size: 16px;
+        font-weight: 600;
+    }
+    
+    /* Mejorar form-actions en tablets */
+    .form-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+        margin-top: 20px;
+    }
+    
+    .form-actions .btn {
+        width: 100%;
+        height: 50px;
+        margin: 0;
+    }
+}
+
+@media (max-width: 768px) {
+    /* Layout optimizado para móviles */
+    .auth-form {
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+        height: 100%;
+        padding: 0;
+    }
+    
+    /* Encabezados de formulario */
+    .auth-form h2 {
+        margin-bottom: 5px;
+        text-align: center;
+        line-height: 1.2;
+    }
+    
+    .auth-form .subtitle {
+        margin-bottom: 20px;
+        text-align: center;
+        line-height: 1.3;
+        opacity: 0.8;
+    }
+    
+    /* Notificaciones mejoradas */
+    .register-notice,
+    .invite-notice {
+        margin-bottom: 20px;
+        padding: 15px;
+        border-radius: 8px;
+        text-align: center;
+    }
+    
+    .register-notice i,
+    .invite-notice i {
+        font-size: 20px;
+        margin-bottom: 8px;
+        display: block;
+    }
+    
+    .register-notice p,
+    .invite-notice p {
+        margin: 0;
+        font-size: 14px;
+        font-weight: 600;
+        line-height: 1.3;
+    }
+    
+    /* Pasos del registro */
+    .register-step {
+        flex: 1;
+        display: none !important;
+        flex-direction: column;
+        justify-content: flex-start;
+        opacity: 0;
+        visibility: hidden !important;
+    }
+    
+    .register-step.active {
+        display: flex !important;
+        opacity: 1;
+        visibility: visible !important;
+        animation: slideInFromRight 0.4s ease;
+    }
+
+    /* Control estricto de visibilidad en móviles */
+    #register-step-1:not(.active),
+    #register-step-2:not(.active) {
+        display: none !important;
+        visibility: hidden !important;
+        position: absolute;
+        left: -9999px;
+    }
+
+    #register-step-1.active,
+    #register-step-2.active {
+        display: flex !important;
+        visibility: visible !important;
+        position: relative;
+        left: auto;
+    }
+    
+    .register-step h3 {
+        text-align: center;
+        margin-bottom: 15px;
+        font-weight: 600;
+        color: var(--login-dark);
+    }
+    
+    /* Formularios dentro de pasos */
+    .register-step form {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    /* Área de botones siempre al final */
+    .form-actions {
+        margin-top: auto;
+        padding-top: 15px;
+    }
+    
+    /* Auth actions mejoradas */
+    .auth-actions {
+        margin-top: 20px;
+        padding-top: 15px;
+        border-top: 1px solid rgba(222, 226, 230, 0.5);
+    }
+    
+    /* Información de autenticación */
+    .auth-info {
+        margin-top: 15px;
+        padding: 12px;
+        font-size: 14px;
+        line-height: 1.4;
+        text-align: center;
+        border-radius: 6px;
+    }
+    
+    .auth-info i {
+        margin-right: 6px;
+        font-size: 14px;
+    }
+    
+    /* Switch de autenticación */
+    .auth-switch {
+        margin-top: 15px;
+        padding: 12px;
+        font-size: 14px;
+        line-height: 1.4;
+        border-radius: 6px;
+    }
+    
+    .auth-switch a {
+        padding: 6px 10px;
+        font-size: 14px;
+        border-radius: 4px;
+    }
+}
+
+@media (max-width: 480px) {
+    /* Ultra compacto para móviles pequeños */
+    .auth-form h2 {
+        font-size: 24px;
+        margin-bottom: 3px;
+    }
+    
+    .auth-form .subtitle {
+        font-size: 13px;
+        margin-bottom: 15px;
+    }
+    
+    .register-notice,
+    .invite-notice {
+        padding: 12px;
+        margin-bottom: 15px;
+    }
+    
+    .register-notice i,
+    .invite-notice i {
+        font-size: 18px;
+        margin-bottom: 6px;
+    }
+    
+    .register-notice p,
+    .invite-notice p {
+        font-size: 13px;
+    }
+    
+    .register-step h3 {
+        font-size: 16px;
+        margin-bottom: 12px;
+    }
+    
+    .form-actions {
+        gap: 12px;
+        margin-top: auto;
+        padding-top: 12px;
+    }
+    
+    .auth-actions {
+        margin-top: 15px;
+        padding-top: 12px;
+    }
+    
+    .auth-info {
+        padding: 10px;
+        font-size: 13px;
+        margin-top: 12px;
+    }
+    
+    .auth-switch {
+        padding: 10px;
+        font-size: 13px;
+        margin-top: 12px;
+    }
+}
+
+@keyframes slideInFromRight {
+    from {
+        opacity: 0;
+        transform: translateX(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* =================================================================
+   MEJORAS DE ACCESIBILIDAD Y UX AVANZADAS
+================================================================= */
+
+/* Aumentar área de toque para elementos interactivos */
+@media (max-width: 768px) {
+    .auth-form .btn,
+    .password-toggle,
+    .auth-switch a {
+        min-height: var(--mobile-touch-target);
+        min-width: var(--mobile-touch-target);
+    }
+    
+    /* Mejorar legibilidad en pantallas pequeñas */
+    .form-help {
+        font-size: var(--mobile-font-xs);
+        line-height: 1.3;
+    }
+    
+    /* Prevenir zoom en inputs en iOS */
+    .form-group input {
+        font-size: 16px !important;
+    }
+    
+    /* Mejorar scroll en dispositivos táctiles */
+    .auth-right {
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior: contain;
+    }
+    
+    /* Optimizar focus para navegación táctil */
+    .form-group input:focus {
+        box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.3);
+        border-color: var(--login-accent);
+    }
+    
+    .auth-form .btn:focus {
+        box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.3);
+        outline: none;
+    }
+    
+    /* CORRECCIÓN CRÍTICA: Layout de botones siempre vertical en móvil */
+    .form-actions {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 12px !important;
+        width: 100% !important;
+        margin-top: 15px !important;
+    }
+    
+    .form-actions .btn {
+        width: 100% !important;
+        margin: 0 !important;
+        flex: none !important;
+        min-height: 48px !important;
+        font-size: 16px !important;
+        font-weight: 600 !important;
+    }
+    
+    .form-actions .btn-primary {
+        order: 1 !important;
+        background: var(--login-accent) !important;
+        color: white !important;
+        border: none !important;
+    }
+    
+    .form-actions .btn-outline {
+        order: 2 !important;
+        background: transparent !important;
+        border: 2px solid var(--login-border) !important;
+        color: var(--login-gray) !important;
+    }
+    
+    .form-actions .btn-outline:hover {
+        background: var(--login-border) !important;
+        color: var(--login-dark) !important;
+        transform: none !important;
+        box-shadow: none !important;
+    }
+    
+    /* Auth actions también verticales */
+    .auth-actions {
+        margin-top: 20px !important;
+        padding-top: 15px !important;
+        border-top: 1px solid rgba(222, 226, 230, 0.5) !important;
+    }
+    
+    .auth-actions .btn {
+        width: 100% !important;
+        margin: 0 !important;
+        min-height: 48px !important;
+        font-size: 16px !important;
+    }
+    
+    .auth-actions .btn-register {
+        background: transparent !important;
+        border: 2px solid var(--login-accent) !important;
+        color: var(--login-accent) !important;
+    }
+    
+    .auth-actions .btn-register:hover {
+        background: var(--login-accent) !important;
+        color: white !important;
+        transform: translateY(-1px) !important;
+    }
+}
+
+/* =================================================================
+   PREVENIR PROBLEMAS DE OVERFLOW Y SCROLL
+================================================================= */
+
+@media (max-width: 768px) {
+    /* Prevenir scroll horizontal */
+    #auth-modal,
+    .modal-content,
+    .auth-container,
+    .auth-left,
+    .auth-right {
+        overflow-x: hidden;
+    }
+    
+    /* Asegurar que el contenido no se desborde */
+    .auth-form {
+        min-height: 0;
+        flex-shrink: 0;
+    }
+    
+    /* Scroll suave en el área de contenido */
+    .auth-right {
+        scroll-behavior: smooth;
+    }
+    
+    /* Prevenir bounce en iOS */
+    .auth-right {
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior-y: contain;
+    }
+}
+
+/* =================================================================
+   ESTADOS ESPECIALES PARA MÓVILES
+================================================================= */
+
+@media (max-width: 768px) {
+    /* Estado de carga optimizado */
+    .auth-form .btn.loading {
+        pointer-events: none;
+        opacity: 0.7;
+    }
+    
+    .auth-form .btn.loading .loading-spinner {
+        display: inline-block;
+        width: 16px;
+        height: 16px;
+        margin-left: 8px;
+    }
+    
+    /* Estados de validación más visibles */
+    .form-group.error input {
+        border-color: #e74c3c;
+        box-shadow: 0 0 0 2px rgba(231, 76, 60, 0.2);
+    }
+    
+    .form-group.success input {
+        border-color: #27ae60;
+        box-shadow: 0 0 0 2px rgba(39, 174, 96, 0.2);
+    }
+    
+    /* Animaciones más suaves en móvil */
+    .auth-form.active {
+        animation: none;
+        opacity: 1;
+        transform: none;
+    }
+    
+    .register-step.active {
+        animation: none;
+        opacity: 1;
+        transform: none;
+    }
+}
+
+/* =================================================================
+   SOPORTE PARA PANTALLAS CON NOTCH (iPhone X+)
+================================================================= */
+
+@media (max-width: 768px) {
+    /* Asegurar que el contenido no se oculte detrás del notch */
+    .auth-container {
+        padding-top: env(safe-area-inset-top);
+        padding-bottom: env(safe-area-inset-bottom);
+        padding-left: env(safe-area-inset-left);
+        padding-right: env(safe-area-inset-right);
+    }
+    
+    /* Ajustar altura considerando las áreas seguras */
+    .auth-left {
+        height: calc(30dvh - env(safe-area-inset-top));
+        min-height: calc(150px - env(safe-area-inset-top));
+    }
+    
+    .auth-right {
+        height: calc(70dvh - env(safe-area-inset-bottom));
+        min-height: calc(400px - env(safe-area-inset-bottom));
+    }
+}
+
+/* =================================================================
+   TÉRMINOS Y CONDICIONES - OPTIMIZACIÓN MÓVIL
+================================================================= */
+
+@media (max-width: 768px) {
+    .terms-section {
+        margin: 1rem 0;
+        padding: 0.75rem;
+        border-radius: 8px;
+    }
+    
+    .checkbox-label {
+        gap: 0.6rem;
+        align-items: flex-start;
+    }
+    
+    .checkmark {
+        width: 18px;
+        height: 18px;
+        margin-top: 1px;
+    }
+    
+    .checkmark::after {
+        left: 5px;
+        top: 1px;
+        width: 4px;
+        height: 8px;
+    }
+    
+    .checkbox-text {
+        font-size: 0.85rem;
+        line-height: 1.3;
+    }
+    
+    .terms-error {
+        font-size: 0.8rem;
+        padding: 0.4rem 0.6rem;
+        gap: 0.4rem;
+    }
+    
+    /* Modales en móvil */
+    .modal.active {
+        padding: 0.5rem;
+    }
+    
+    .modal-content {
+        max-height: calc(95dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+        border-radius: 12px;
+    }
+    
+    .modal-header {
+        padding: 1rem 1.25rem;
+    }
+    
+    .modal-header h2 {
+        font-size: 1.2rem;
+    }
+    
+    .modal-body {
+        padding: 1.25rem;
+        font-size: 0.9rem;
+    }
+    
+    .terms-content h3,
+    .privacy-content h3 {
+        font-size: 1rem;
+        margin: 1.2rem 0 0.6rem 0;
+    }
+    
+    .terms-content p,
+    .privacy-content p {
+        font-size: 0.85rem;
+        margin: 0.6rem 0;
+    }
+    
+    .terms-content ul,
+    .privacy-content ul {
+        padding-left: 1.2rem;
+        margin: 0.6rem 0;
+    }
+    
+    .terms-content li,
+    .privacy-content li {
+        font-size: 0.85rem;
+        margin: 0.3rem 0;
+    }
+    
+    .modal-footer {
+        padding: 1rem 1.25rem;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+    
+    .modal-footer .btn {
+        width: 100%;
+        justify-content: center;
+        padding: 0.75rem 1rem;
+        font-size: 0.9rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .terms-section {
+        margin: 0.75rem 0;
+        padding: 0.6rem;
+    }
+    
+    .checkbox-text {
+        font-size: 0.8rem;
+    }
+    
+    .modal-content {
+        max-height: calc(98dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+        border-radius: 8px;
+    }
+    
+    .modal-header,
+    .modal-body,
+    .modal-footer {
+        padding: 1rem;
+    }
+    
+    .modal-header h2 {
+        font-size: 1.1rem;
+    }
+    
+    .terms-content h3,
+    .privacy-content h3 {
+        font-size: 0.95rem;
+    }
+    
+    .terms-content p,
+    .privacy-content p,
+    .terms-content li,
+    .privacy-content li {
+        font-size: 0.8rem;
+    }
+}
+
+/* =================================================================
+   BOTÓN DESHABILITADO - OPTIMIZACIÓN MÓVIL
+================================================================= */
+
+@media (max-width: 768px) {
+    /* Botón deshabilitado en móviles */
+    #create-account-btn:disabled {
+        background: #95a5a6 !important;
+        color: #7f8c8d !important;
+        cursor: not-allowed !important;
+        opacity: 0.6;
+        padding: 0.75rem 1rem;
+        font-size: 0.9rem;
+    }
+    
+    #create-account-btn:disabled:hover {
+        background: #95a5a6 !important;
+        color: #7f8c8d !important;
+        transform: none !important;
+    }
+    
+    /* Mensaje visual adicional en móviles */
+    .terms-section {
+        position: relative;
+    }
+    
+    .terms-section::after {
+        content: "👆 Acepta para habilitar el botón";
+        display: block;
+        font-size: 0.75rem;
+        color: var(--login-text-secondary);
+        text-align: center;
+        margin-top: 0.5rem;
+        opacity: 0.8;
+    }
+    
+    .terms-section.terms-accepted::after {
+        content: "✅ Términos aceptados";
+        color: #27ae60;
+    }
+}
+
+@media (max-width: 480px) {
+    #create-account-btn:disabled {
+        padding: 0.7rem 0.8rem;
+        font-size: 0.85rem;
+    }
+    
+    .terms-section::after {
+        font-size: 0.7rem;
+        margin-top: 0.4rem;
+    }
+}
+
+/* =================================================================
+   RECUPERAR CONTRASEÑA - OPTIMIZACIÓN MÓVIL
+================================================================= */
+
+@media (max-width: 768px) {
+    .forgot-password-section {
+        text-align: center;
+        margin: 0.75rem 0 1.5rem 0;
+    }
+    
+    .forgot-password-link {
+        font-size: 0.85rem;
+        padding: 0.5rem;
+        border-radius: 6px;
+        background: rgba(74, 144, 226, 0.05);
+        transition: all 0.3s ease;
+    }
+    
+    .forgot-password-link:hover {
+        background: rgba(74, 144, 226, 0.1);
+        transform: none;
+    }
+    
+    .forgot-notice {
+        padding: 0.75rem;
+        margin-bottom: 1rem;
+        font-size: 0.85rem;
+    }
+    
+    .forgot-notice i {
+        font-size: 1rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .forgot-password-link {
+        font-size: 0.8rem;
+        gap: 0.3rem;
+    }
+    
+    .forgot-notice {
+        padding: 0.6rem;
+        gap: 0.5rem;
+    }
+    
+    .forgot-notice p {
+        font-size: 0.8rem;
+    }
+}
+
+/* =================================================================
+   SEGURIDAD Y CAMBIO DE CONTRASEÑA - OPTIMIZACIÓN MÓVIL
+================================================================= */
+
+@media (max-width: 768px) {
+    .security-card {
+        margin-top: 1.5rem;
+    }
+    
+    .security-section {
+        padding: 1rem 0;
+    }
+    
+    .security-section h4 {
+        font-size: 1rem;
+        gap: 0.4rem;
+    }
+    
+    .section-description {
+        font-size: 0.85rem;
+        margin-bottom: 1rem;
+    }
+    
+    .change-password-form .form-group {
+        margin-bottom: 1.2rem;
+    }
+    
+    .change-password-form label {
+        font-size: 0.9rem;
+        gap: 0.4rem;
+    }
+    
+    .security-info {
+        padding: 1rem;
+    }
+    
+    .security-tip {
+        gap: 0.75rem;
+    }
+    
+    .security-tip i {
+        font-size: 1rem;
+    }
+    
+    .security-tip p {
+        font-size: 0.85rem;
+    }
+    
+    /* Form actions en móvil */
+    .change-password-form .form-actions {
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+    
+    .change-password-form .form-actions .btn {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .security-section h4 {
+        font-size: 0.95rem;
+    }
+    
+    .section-description {
+        font-size: 0.8rem;
+    }
+    
+    .change-password-form label {
+        font-size: 0.85rem;
+    }
+    
+    .security-info {
+        padding: 0.75rem;
+    }
+    
+    .security-tip p {
+        font-size: 0.8rem;
+    }
+}

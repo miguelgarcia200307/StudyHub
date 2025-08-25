@@ -2,6 +2,12 @@
 // Gestión de autenticación con Supabase
 // =================================================================
 
+// Nota: Evitamos realizar consultas REST directas a la tabla `usuarios` desde el
+// cliente cuando la aplicación usa políticas RLS estrictas. Tales consultas
+// pueden devolver errores 406/403 si las políticas impiden el acceso. En su
+// lugar, usamos las funciones de Auth (resetPasswordForEmail) y RPC/funciones
+// seguras en el servidor para obtener datos sensibles cuando sea necesario.
+
 class AuthManager {
     constructor() {
         this.supabase = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
@@ -1017,7 +1023,20 @@ document.addEventListener('DOMContentLoaded', function() {
         registerStepTwoForm.addEventListener('submit', async function(e) {
             e.preventDefault();
             
+            // Validar términos y condiciones PRIMERO
+            if (!validateTermsAndConditions()) {
+                // El mensaje ya se muestra en validateTermsAndConditions()
+                return;
+            }
+            
             const submitBtn = e.target.querySelector('button[type="submit"]');
+            
+            // Verificar que el botón no esté deshabilitado (doble verificación)
+            if (submitBtn.disabled) {
+                window.authManager.showErrorMessage('❌ No puedes crear la cuenta sin aceptar los términos y condiciones');
+                return;
+            }
+            
             const btnText = submitBtn.querySelector('span');
             const btnIcon = submitBtn.querySelector('i');
             const loadingSpinner = submitBtn.querySelector('.loading-spinner');
@@ -1105,6 +1124,50 @@ document.addEventListener('DOMContentLoaded', function() {
     
     if (confirmPasswordInput) {
         confirmPasswordInput.addEventListener('input', checkPasswordMatch);
+    }
+
+    // Event listener para el checkbox de términos y condiciones
+    const termsCheckbox = document.getElementById('terms-checkbox');
+    if (termsCheckbox) {
+        termsCheckbox.addEventListener('change', function() {
+            if (this.checked) {
+                hideTermsError();
+            }
+            // Actualizar estado del botón cada vez que cambie el checkbox
+            updateCreateAccountButtonState();
+        });
+        
+        // Inicializar estado del botón al cargar la página
+        updateCreateAccountButtonState();
+    }
+
+    // Event listener para clicks en botón deshabilitado
+    const createAccountBtn = document.getElementById('create-account-btn');
+    if (createAccountBtn) {
+        createAccountBtn.addEventListener('click', function(e) {
+            if (this.disabled) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                window.authManager.showErrorMessage('🔒 Debes aceptar los Términos y Condiciones para crear tu cuenta');
+                
+                // Hacer scroll hacia los términos
+                const termsSection = document.querySelector('.terms-section');
+                if (termsSection) {
+                    termsSection.scrollIntoView({ 
+                        behavior: 'smooth', 
+                        block: 'center' 
+                    });
+                    
+                    // Efecto visual de atención
+                    termsSection.style.animation = 'pulse 0.6s ease-in-out';
+                    setTimeout(() => {
+                        termsSection.style.animation = '';
+                    }, 600);
+                }
+                
+                return false;
+            }
+        });
     }
 
     // Botón de logout
@@ -1224,6 +1287,199 @@ document.addEventListener('DOMContentLoaded', function() {
     const pendingInvitation = localStorage.getItem('pending_subject_invitation');
     if (pendingInvitation && window.authManager && window.authManager.isAuthenticated()) {
         processSubjectInvitation(pendingInvitation);
+    }
+
+    // =================================================================
+    // EVENT LISTENERS PARA RECUPERAR Y CAMBIAR CONTRASEÑA
+    // =================================================================
+
+    // Formulario de recuperar contraseña
+    const forgotPasswordForm = document.getElementById('forgotPasswordForm');
+    if (forgotPasswordForm) {
+        forgotPasswordForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            const btnText = submitBtn.querySelector('span');
+            const btnIcon = submitBtn.querySelector('i');
+            const loadingSpinner = submitBtn.querySelector('.loading-spinner');
+            const email = document.getElementById('forgot-email').value;
+            
+            if (!email) {
+                window.authManager.showErrorMessage('Por favor ingresa tu correo electrónico');
+                return;
+            }
+            
+            // Validar formato de email
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                window.authManager.showErrorMessage('Por favor ingresa un correo electrónico válido');
+                return;
+            }
+            
+            // Mostrar loading
+            btnText.style.display = 'none';
+            btnIcon.style.display = 'none';
+            loadingSpinner.style.display = 'inline-block';
+            submitBtn.disabled = true;
+            
+            try {
+                // Enviar email de recuperación usando Supabase Auth directamente.
+                // Evitamos hacer una consulta REST a la tabla `usuarios` (puede fallar por RLS y producir 406).
+                const { error } = await window.authManager.supabase.auth.resetPasswordForEmail(email, {
+                    redirectTo: `${window.location.origin}${window.location.pathname}#reset-password`
+                });
+
+                if (error) {
+                    console.error('Error en recuperación de contraseña (Auth):', error);
+                    throw error;
+                }
+
+                // Mensaje intencionalmente genérico para no filtrar si el email existe o no
+                window.authManager.showSuccessMessage(
+                    `✅ Si existe una cuenta asociada, se ha enviado un enlace de recuperación a ${email}. Revisa tu bandeja de entrada y spam.`
+                );
+
+                // Limpiar formulario y volver al login
+                resetForgotPasswordForm();
+                setTimeout(() => {
+                    showLogin();
+                }, 2000);
+
+            } catch (error) {
+                console.error('Error en recuperación de contraseña:', error);
+                window.authManager.showErrorMessage(error.message || 'Error al enviar el enlace de recuperación');
+            } finally {
+                // Ocultar loading
+                btnText.style.display = 'inline';
+                btnIcon.style.display = 'inline';
+                loadingSpinner.style.display = 'none';
+                submitBtn.disabled = false;
+            }
+        });
+    }
+
+    // Formulario de cambiar contraseña
+    const changePasswordForm = document.getElementById('change-password-form');
+    if (changePasswordForm) {
+        changePasswordForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            const btnText = submitBtn.querySelector('span');
+            const btnIcon = submitBtn.querySelector('i');
+            const loadingSpinner = submitBtn.querySelector('.loading-spinner');
+            
+            const currentPassword = document.getElementById('current-password').value;
+            const newPassword = document.getElementById('new-password').value;
+            const confirmNewPassword = document.getElementById('confirm-new-password').value;
+            
+            // Validaciones
+            if (!currentPassword || !newPassword || !confirmNewPassword) {
+                window.authManager.showErrorMessage('Por favor completa todos los campos');
+                return;
+            }
+            
+            if (newPassword !== confirmNewPassword) {
+                window.authManager.showErrorMessage('Las nuevas contraseñas no coinciden');
+                return;
+            }
+            
+            if (newPassword.length < 6) {
+                window.authManager.showErrorMessage('La nueva contraseña debe tener al menos 6 caracteres');
+                return;
+            }
+            
+            if (currentPassword === newPassword) {
+                window.authManager.showErrorMessage('La nueva contraseña debe ser diferente a la actual');
+                return;
+            }
+            
+            // Mostrar loading
+            btnText.style.display = 'none';
+            btnIcon.style.display = 'none';
+            loadingSpinner.style.display = 'inline-block';
+            submitBtn.disabled = true;
+            
+            try {
+                // Verificar contraseña actual
+                const { error: signInError } = await window.authManager.supabase.auth.signInWithPassword({
+                    email: window.authManager.currentUser.email,
+                    password: currentPassword
+                });
+                
+                if (signInError) {
+                    throw new Error('La contraseña actual es incorrecta');
+                }
+                
+                // Actualizar contraseña
+                const { error: updateError } = await window.authManager.supabase.auth.updateUser({
+                    password: newPassword
+                });
+                
+                if (updateError) throw updateError;
+                
+                window.authManager.showSuccessMessage('✅ Contraseña actualizada correctamente');
+                
+                // Limpiar formulario
+                resetChangePasswordForm();
+                
+            } catch (error) {
+                console.error('Error al cambiar contraseña:', error);
+                window.authManager.showErrorMessage(error.message || 'Error al cambiar la contraseña');
+            } finally {
+                // Ocultar loading
+                btnText.style.display = 'inline';
+                btnIcon.style.display = 'inline';
+                loadingSpinner.style.display = 'none';
+                submitBtn.disabled = false;
+            }
+        });
+    }
+
+    // Botón cancelar cambio de contraseña
+    const cancelPasswordChange = document.getElementById('cancel-password-change');
+    if (cancelPasswordChange) {
+        cancelPasswordChange.addEventListener('click', function() {
+            resetChangePasswordForm();
+        });
+    }
+
+    // Password toggles para los nuevos campos (usando data-target)
+    const passwordToggles = document.querySelectorAll('.password-toggle[data-target]');
+    passwordToggles.forEach(toggle => {
+        const targetId = toggle.getAttribute('data-target');
+        const input = document.getElementById(targetId);
+        
+        if (input) {
+            toggle.addEventListener('click', function() {
+                const type = input.getAttribute('type') === 'password' ? 'text' : 'password';
+                input.setAttribute('type', type);
+                
+                const icon = this.querySelector('i');
+                if (icon) {
+                    icon.classList.toggle('fa-eye');
+                    icon.classList.toggle('fa-eye-slash');
+                }
+            });
+        }
+    });
+
+    // Password strength para nueva contraseña
+    const newPasswordInput = document.getElementById('new-password');
+    const confirmNewPasswordInput = document.getElementById('confirm-new-password');
+    
+    if (newPasswordInput) {
+        newPasswordInput.addEventListener('input', function() {
+            evaluatePasswordStrength(this.value, 'new-password-strength-bar', 'new-password-strength-text');
+            checkNewPasswordMatch();
+        });
+    }
+    
+    if (confirmNewPasswordInput) {
+        confirmNewPasswordInput.addEventListener('input', function() {
+            checkNewPasswordMatch();
+        });
     }
 });
 
@@ -1439,13 +1695,37 @@ function showRegistrationStep(step) {
     const step1 = document.getElementById('register-step-1');
     const step2 = document.getElementById('register-step-2');
     
+    // Debug para verificar que la función se llama
+    console.log('Cambiando a paso:', step);
+    
     if (step === 1) {
         step1.classList.add('active');
         step2.classList.remove('active');
+        
+        // Forzar ocultación del paso 2
+        step2.style.display = 'none';
+        step1.style.display = 'block';
+        
+        console.log('Mostrando paso 1, ocultando paso 2');
     } else if (step === 2) {
         step1.classList.remove('active');
         step2.classList.add('active');
+        
+        // Forzar ocultación del paso 1
+        step1.style.display = 'none';
+        step2.style.display = 'block';
+        
+        // Actualizar estado del botón al mostrar paso 2
+        setTimeout(() => {
+            updateCreateAccountButtonState();
+        }, 100);
+        
+        console.log('Mostrando paso 2, ocultando paso 1');
     }
+    
+    // Verificar estado final
+    console.log('Step 1 active:', step1.classList.contains('active'));
+    console.log('Step 2 active:', step2.classList.contains('active'));
 }
 
 // Resetear formulario de registro
@@ -1637,3 +1917,300 @@ window.createAdminUser = async function() {
         console.error('Error en createAdminUser:', error);
     }
 };
+
+// =================================================================
+// FUNCIONES PARA TÉRMINOS Y CONDICIONES
+// =================================================================
+
+// Abrir modal de términos y condiciones
+function openTermsModal() {
+    const modal = document.getElementById('terms-modal');
+    if (modal) {
+        modal.classList.add('active');
+        document.body.style.overflow = 'hidden'; // Prevenir scroll del fondo
+    }
+}
+
+// Cerrar modal de términos y condiciones
+function closeTermsModal() {
+    const modal = document.getElementById('terms-modal');
+    if (modal) {
+        modal.classList.remove('active');
+        document.body.style.overflow = 'auto';
+    }
+}
+
+// Aceptar términos desde el modal
+function acceptTermsFromModal() {
+    const checkbox = document.getElementById('terms-checkbox');
+    if (checkbox) {
+        checkbox.checked = true;
+        hideTermsError();
+        // Actualizar estado del botón
+        updateCreateAccountButtonState();
+        
+        // Mostrar mensaje de confirmación
+        window.authManager.showSuccessMessage('✅ Términos y condiciones aceptados correctamente');
+    }
+    closeTermsModal();
+}
+
+// Abrir modal de políticas de privacidad
+function openPrivacyModal() {
+    const modal = document.getElementById('privacy-modal');
+    if (modal) {
+        modal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+}
+
+// Cerrar modal de políticas de privacidad
+function closePrivacyModal() {
+    const modal = document.getElementById('privacy-modal');
+    if (modal) {
+        modal.classList.remove('active');
+        document.body.style.overflow = 'auto';
+    }
+}
+
+// Aceptar privacidad desde el modal
+function acceptPrivacyFromModal() {
+    closePrivacyModal();
+}
+
+// Validar términos y condiciones
+function validateTermsAndConditions() {
+    const checkbox = document.getElementById('terms-checkbox');
+    const isAccepted = checkbox && checkbox.checked;
+    
+    if (!isAccepted) {
+        showTermsError();
+        // Mostrar mensaje específico de términos
+        window.authManager.showErrorMessage('⚠️ Debes aceptar los Términos y Condiciones y las Políticas de Privacidad para crear tu cuenta en StudyHub.live');
+        return false;
+    }
+    
+    hideTermsError();
+    return true;
+}
+
+// Actualizar estado del botón según términos
+function updateCreateAccountButtonState() {
+    const checkbox = document.getElementById('terms-checkbox');
+    const button = document.getElementById('create-account-btn');
+    const termsSection = document.querySelector('.terms-section');
+    const isAccepted = checkbox && checkbox.checked;
+    
+    if (button) {
+        if (isAccepted) {
+            button.disabled = false;
+            button.title = 'Crear mi cuenta en StudyHub.live';
+            
+            // Agregar clase visual para términos aceptados
+            if (termsSection) {
+                termsSection.classList.add('terms-accepted');
+            }
+        } else {
+            button.disabled = true;
+            button.title = 'Debes aceptar los términos y condiciones para continuar';
+            
+            // Remover clase visual
+            if (termsSection) {
+                termsSection.classList.remove('terms-accepted');
+            }
+        }
+    }
+    
+    console.log('Estado del botón actualizado. Términos aceptados:', isAccepted);
+}
+
+// Mostrar error de términos
+function showTermsError() {
+    const errorElement = document.getElementById('terms-error');
+    if (errorElement) {
+        errorElement.style.display = 'flex';
+        
+        // Scroll suave hacia el error
+        errorElement.scrollIntoView({ 
+            behavior: 'smooth', 
+            block: 'center' 
+        });
+    }
+}
+
+// Ocultar error de términos
+function hideTermsError() {
+    const errorElement = document.getElementById('terms-error');
+    if (errorElement) {
+        errorElement.style.display = 'none';
+    }
+}
+
+// Cerrar modales al hacer clic fuera de ellos
+document.addEventListener('click', function(e) {
+    const termsModal = document.getElementById('terms-modal');
+    const privacyModal = document.getElementById('privacy-modal');
+    
+    if (e.target === termsModal) {
+        closeTermsModal();
+    }
+    
+    if (e.target === privacyModal) {
+        closePrivacyModal();
+    }
+});
+
+// Cerrar modales con la tecla Escape
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeTermsModal();
+        closePrivacyModal();
+    }
+});
+
+// Hacer las funciones globales para que se puedan llamar desde HTML
+window.openTermsModal = openTermsModal;
+window.closeTermsModal = closeTermsModal;
+window.acceptTermsFromModal = acceptTermsFromModal;
+window.openPrivacyModal = openPrivacyModal;
+window.closePrivacyModal = closePrivacyModal;
+window.acceptPrivacyFromModal = acceptPrivacyFromModal;
+
+// =================================================================
+// FUNCIONES DE NAVEGACIÓN ENTRE FORMULARIOS
+// =================================================================
+
+// Mostrar formulario de login
+function showLogin() {
+    const loginForm = document.getElementById('login-form');
+    const registerForm = document.getElementById('register-form');
+    const forgotForm = document.getElementById('forgot-password-form');
+    
+    if (loginForm) loginForm.classList.add('active');
+    if (registerForm) registerForm.classList.remove('active');
+    if (forgotForm) forgotForm.classList.remove('active');
+    
+    // Resetear formularios
+    resetForgotPasswordForm();
+    resetRegistrationForm();
+}
+
+// Mostrar formulario de registro
+function showRegister() {
+    const loginForm = document.getElementById('login-form');
+    const registerForm = document.getElementById('register-form');
+    const forgotForm = document.getElementById('forgot-password-form');
+    
+    if (loginForm) loginForm.classList.remove('active');
+    if (registerForm) registerForm.classList.add('active');
+    if (forgotForm) forgotForm.classList.remove('active');
+    
+    // Resetear formularios
+    resetForgotPasswordForm();
+    showRegistrationStep(1);
+}
+
+// Mostrar formulario de recuperar contraseña
+function showForgotPassword() {
+    const loginForm = document.getElementById('login-form');
+    const registerForm = document.getElementById('register-form');
+    const forgotForm = document.getElementById('forgot-password-form');
+    
+    if (loginForm) loginForm.classList.remove('active');
+    if (registerForm) registerForm.classList.remove('active');
+    if (forgotForm) forgotForm.classList.add('active');
+    
+    // Resetear formularios
+    resetRegistrationForm();
+    resetForgotPasswordForm();
+    
+    // Focus en el campo de email
+    setTimeout(() => {
+        const emailInput = document.getElementById('forgot-email');
+        if (emailInput) emailInput.focus();
+    }, 100);
+}
+
+// Resetear formulario de recuperar contraseña
+function resetForgotPasswordForm() {
+    const emailInput = document.getElementById('forgot-email');
+    if (emailInput) emailInput.value = '';
+}
+
+// Hacer funciones globales
+window.showLogin = showLogin;
+window.showRegister = showRegister;
+window.showForgotPassword = showForgotPassword;
+
+// =================================================================
+// FUNCIONES AUXILIARES PARA CONTRASEÑAS
+// =================================================================
+
+// Resetear formulario de cambiar contraseña
+function resetChangePasswordForm() {
+    const inputs = ['current-password', 'new-password', 'confirm-new-password'];
+    inputs.forEach(id => {
+        const input = document.getElementById(id);
+        if (input) input.value = '';
+    });
+    
+    // Resetear indicadores de fortaleza y coincidencia
+    const strengthBar = document.getElementById('new-password-strength-bar');
+    const strengthText = document.getElementById('new-password-strength-text');
+    const passwordMatch = document.getElementById('new-password-match');
+    
+    if (strengthBar) {
+        strengthBar.className = 'strength-bar';
+        strengthBar.style.width = '0%';
+    }
+    if (strengthText) {
+        strengthText.textContent = 'Ingresa una nueva contraseña';
+        strengthText.className = 'strength-text';
+    }
+    if (passwordMatch) {
+        passwordMatch.textContent = '';
+        passwordMatch.className = 'password-match';
+    }
+}
+
+// Verificar coincidencia de nuevas contraseñas
+function checkNewPasswordMatch() {
+    const newPassword = document.getElementById('new-password').value;
+    const confirmPassword = document.getElementById('confirm-new-password').value;
+    const matchElement = document.getElementById('new-password-match');
+    
+    if (!matchElement) return;
+    
+    if (confirmPassword === '') {
+        matchElement.textContent = '';
+        matchElement.className = 'password-match';
+        return;
+    }
+    
+    if (newPassword === confirmPassword) {
+        matchElement.textContent = '✓ Las contraseñas coinciden';
+        matchElement.className = 'password-match match';
+    } else {
+        matchElement.textContent = '✗ Las contraseñas no coinciden';
+        matchElement.className = 'password-match no-match';
+    }
+}
+
+// Configurar toggle de contraseña mejorado
+function setupPasswordToggle(toggleId, inputId) {
+    const toggle = document.querySelector(`[data-target="${inputId}"]`);
+    const input = document.getElementById(inputId);
+    
+    if (toggle && input) {
+        toggle.addEventListener('click', function() {
+            const type = input.getAttribute('type') === 'password' ? 'text' : 'password';
+            input.setAttribute('type', type);
+            
+            const icon = this.querySelector('i');
+            if (icon) {
+                icon.classList.toggle('fa-eye');
+                icon.classList.toggle('fa-eye-slash');
+            }
+        });
+    }
+}
