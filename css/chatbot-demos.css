@@ -1,0 +1,335 @@
+/* =================================================================
+   ESTILOS PARA DEMOS INTERACTIVAS DEL CHATBOT
+   ================================================================= */
+
+/* Contenedor de botones de demo */
+.chat-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 20px;
+    padding: 15px 0;
+}
+
+/* Botones de acción individuales - MEJORADO */
+.action-button {
+    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    color: #ffffff;
+    padding: 16px 20px;
+    font-size: 15px;
+    font-weight: 600;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    text-align: left;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 
+        0 4px 15px rgba(79, 70, 229, 0.4),
+        0 2px 4px rgba(0, 0, 0, 0.1);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+    letter-spacing: 0.025em;
+    line-height: 1.4;
+}
+
+.action-button:hover {
+    transform: translateY(-3px) scale(1.02);
+    box-shadow: 
+        0 8px 25px rgba(79, 70, 229, 0.5),
+        0 4px 8px rgba(0, 0, 0, 0.15);
+    background: linear-gradient(135deg, #4338ca 0%, #6d28d9 100%);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.action-button:active {
+    transform: translateY(-1px) scale(1.01);
+    box-shadow: 
+        0 3px 12px rgba(79, 70, 229, 0.4),
+        0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.action-button:focus {
+    outline: 3px solid rgba(79, 70, 229, 0.5);
+    outline-offset: 2px;
+}
+
+/* Efectos especiales para botones de demo - COLORES MEJORADOS */
+.action-button.demo-calculadora {
+    background: linear-gradient(135deg, #059669 0%, #047857 100%);
+    box-shadow: 
+        0 4px 15px rgba(5, 150, 105, 0.4),
+        0 2px 4px rgba(0, 0, 0, 0.1);
+    border-color: rgba(16, 185, 129, 0.3);
+}
+
+.action-button.demo-calculadora:hover {
+    background: linear-gradient(135deg, #047857 0%, #065f46 100%);
+    box-shadow: 
+        0 8px 25px rgba(5, 150, 105, 0.5),
+        0 4px 8px rgba(0, 0, 0, 0.15);
+    transform: translateY(-3px) scale(1.02);
+}
+
+.action-button.demo-pomodoro {
+    background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+    box-shadow: 
+        0 4px 15px rgba(220, 38, 38, 0.4),
+        0 2px 4px rgba(0, 0, 0, 0.1);
+    border-color: rgba(239, 68, 68, 0.3);
+}
+
+.action-button.demo-pomodoro:hover {
+    background: linear-gradient(135deg, #b91c1c 0%, #991b1b 100%);
+    box-shadow: 
+        0 8px 25px rgba(220, 38, 38, 0.5),
+        0 4px 8px rgba(0, 0, 0, 0.15);
+    transform: translateY(-3px) scale(1.02);
+}
+
+.action-button.demo-analytics {
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+    box-shadow: 
+        0 4px 15px rgba(37, 99, 235, 0.4),
+        0 2px 4px rgba(0, 0, 0, 0.1);
+    border-color: rgba(59, 130, 246, 0.3);
+}
+
+.action-button.demo-analytics:hover {
+    background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
+    box-shadow: 
+        0 8px 25px rgba(37, 99, 235, 0.5),
+        0 4px 8px rgba(0, 0, 0, 0.15);
+    transform: translateY(-3px) scale(1.02);
+}
+
+.action-button.demo-gamificacion {
+    background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+    box-shadow: 
+        0 4px 15px rgba(124, 58, 237, 0.4),
+        0 2px 4px rgba(0, 0, 0, 0.1);
+    border-color: rgba(139, 92, 246, 0.3);
+}
+
+.action-button.demo-gamificacion:hover {
+    background: linear-gradient(135deg, #6d28d9 0%, #5b21b6 100%);
+    box-shadow: 
+        0 8px 25px rgba(124, 58, 237, 0.5),
+        0 4px 8px rgba(0, 0, 0, 0.15);
+    transform: translateY(-3px) scale(1.02);
+}
+
+.action-button.demo-emocional {
+    background: linear-gradient(135deg, #ec4899 0%, #db2777 100%);
+    box-shadow: 
+        0 4px 15px rgba(236, 72, 153, 0.4),
+        0 2px 4px rgba(0, 0, 0, 0.1);
+    border-color: rgba(244, 114, 182, 0.3);
+}
+
+.action-button.demo-emocional:hover {
+    background: linear-gradient(135deg, #db2777 0%, #be185d 100%);
+    box-shadow: 
+        0 8px 25px rgba(236, 72, 153, 0.5),
+        0 4px 8px rgba(0, 0, 0, 0.15);
+    transform: translateY(-3px) scale(1.02);
+}
+
+.action-button.demo-juegos {
+    background: linear-gradient(135deg, #0891b2 0%, #0e7490 100%);
+    box-shadow: 
+        0 4px 15px rgba(8, 145, 178, 0.4),
+        0 2px 4px rgba(0, 0, 0, 0.1);
+    border-color: rgba(34, 211, 238, 0.3);
+}
+
+.action-button.demo-juegos:hover {
+    background: linear-gradient(135deg, #0e7490 0%, #155e75 100%);
+    box-shadow: 
+        0 8px 25px rgba(8, 145, 178, 0.5),
+        0 4px 8px rgba(0, 0, 0, 0.15);
+    transform: translateY(-3px) scale(1.02);
+}
+
+/* Botón de volver - MEJORADO */
+.action-button.volver {
+    background: linear-gradient(135deg, #64748b 0%, #475569 100%);
+    box-shadow: 
+        0 4px 15px rgba(100, 116, 139, 0.4),
+        0 2px 4px rgba(0, 0, 0, 0.1);
+    border-color: rgba(148, 163, 184, 0.3);
+}
+
+.action-button.volver:hover {
+    background: linear-gradient(135deg, #475569 0%, #334155 100%);
+    box-shadow: 
+        0 8px 25px rgba(100, 116, 139, 0.5),
+        0 4px 8px rgba(0, 0, 0, 0.15);
+    transform: translateY(-3px) scale(1.02);
+}
+
+/* Animación de pulso para botones destacados */
+@keyframes pulse-demo {
+    0% {
+        box-shadow: 0 2px 10px rgba(102, 126, 234, 0.3);
+    }
+    50% {
+        box-shadow: 0 4px 20px rgba(102, 126, 234, 0.6);
+    }
+    100% {
+        box-shadow: 0 2px 10px rgba(102, 126, 234, 0.3);
+    }
+}
+
+.action-button.destacado {
+    animation: pulse-demo 2s infinite;
+}
+
+/* Efecto de shimmer en botones principales */
+.action-button.principal::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+    transition: left 0.5s;
+}
+
+.action-button.principal:hover::before {
+    left: 100%;
+}
+
+/* Estilos adicionales para mejor legibilidad */
+.action-button strong,
+.action-button b {
+    font-weight: 700;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.action-button .emoji {
+    display: inline-block;
+    margin-right: 8px;
+    font-size: 1.1em;
+    vertical-align: middle;
+}
+
+/* Estado deshabilitado */
+.action-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+}
+
+.action-button:disabled:hover {
+    transform: none !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Mejoras de accesibilidad */
+@media (prefers-reduced-motion: reduce) {
+    .action-button {
+        transition: none;
+        animation: none;
+    }
+    
+    .action-button:hover {
+        transform: none;
+    }
+}
+
+@media (prefers-contrast: high) {
+    .action-button {
+        border-width: 3px;
+        border-color: #ffffff;
+        text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+    }
+}
+
+/* Responsive para móviles - MEJORADO */
+@media (max-width: 768px) {
+    .action-button {
+        padding: 14px 16px;
+        font-size: 14px;
+        border-radius: 12px;
+        font-weight: 600;
+    }
+    
+    .chat-actions {
+        gap: 8px;
+        padding: 12px 0;
+    }
+}
+
+@media (max-width: 480px) {
+    .action-button {
+        padding: 12px 14px;
+        font-size: 13px;
+        border-radius: 10px;
+    }
+    
+    .chat-actions {
+        gap: 6px;
+    }
+}
+
+/* Efecto de carga para botones */
+.action-button.loading {
+    position: relative;
+    color: transparent;
+}
+
+.action-button.loading::after {
+    content: '';
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    top: 50%;
+    left: 50%;
+    margin-left: -10px;
+    margin-top: -10px;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    border-top-color: #ffffff;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+/* Tooltips para botones */
+.action-button[data-tooltip]:hover::before {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0,0,0,0.8);
+    color: white;
+    padding: 5px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    white-space: nowrap;
+    z-index: 1000;
+    margin-bottom: 5px;
+}
+
+.action-button[data-tooltip]:hover::after {
+    content: '';
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 5px solid transparent;
+    border-top-color: rgba(0,0,0,0.8);
+    z-index: 1000;
+}
