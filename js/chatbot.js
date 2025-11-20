@@ -17,6 +17,10 @@ class StudyBot {
             entities: {}
         };
         
+        // ========== NUEVO: SISTEMA CONVERSACIONAL MULTI-PASO ==========
+        this.conversationState = null; // 'creatingNote', 'creatingSubject', 'creatingTask'
+        this.pendingData = {}; // Datos temporales del flujo actual
+        
         // ========== DATOS DEL USUARIO ==========
         this.currentUser = null;
         this.currentUserProfile = null;
@@ -28,8 +32,11 @@ class StudyBot {
             'materia': 'asignatura',
             'clase': 'asignatura',
             'ramo': 'asignatura',
+            'curso': 'asignatura',
             'materias': 'asignaturas',
             'clases': 'asignaturas',
+            'cursos': 'asignaturas',
+            'ramos': 'asignaturas',
             'parcial': 'examen',
             'prueba': 'examen',
             'test': 'examen',
@@ -38,17 +45,36 @@ class StudyBot {
             'trabajo': 'proyecto',
             'entrega': 'proyecto',
             'deberes': 'tarea',
+            'actividad': 'tarea',
+            'actividades': 'tareas',
+            'pendiente': 'tarea',
+            'pendientes': 'tareas',
+            'recordatorio': 'tarea',
+            'recordatorios': 'tareas',
             'agenda': 'calendario',
             'horario': 'calendario',
+            'apunte': 'nota',
             'apuntes': 'notas',
             'resumenes': 'notas',
+            'resumen': 'nota',
+            'anotacion': 'nota',
             'anotaciones': 'notas',
-            'pendientes': 'tareas',
             'inicio': 'dashboard',
             'principal': 'dashboard',
-            'recordatorios': 'calendario',
             'organizarme': 'organizar',
-            'organizame': 'organizar'
+            'organizame': 'organizar',
+            // Verbos de acción para normalizar
+            'creame': 'crear',
+            'hazme': 'crear',
+            'registrame': 'registrar',
+            'guardame': 'guardar',
+            'anotame': 'anotar',
+            'agregame': 'agregar',
+            'anademe': 'anadir',
+            'ponme': 'poner',
+            'ayudame': 'ayudar',
+            'puedes': 'poder',
+            'podrias': 'poder'
         };
         
         // Inicializar cuando el DOM esté listo
@@ -586,6 +612,121 @@ class StudyBot {
                 priority: 16,
                 minScore: 10
             },
+
+            // NUEVOS INTENTS PARA CREACIÓN DE CONTENIDO
+            
+            // Crear nota
+            {
+                name: 'crear_nota',
+                patterns: [
+                    // Patrones básicos (mantener compatibilidad)
+                    /(crear|nueva|nuevo|agregar|anadir) (nota|notas|apunte|apuntes|anotacion)/,
+                    /^nueva nota$/,
+                    /^crear nota$/,
+                    /^nuevo apunte$/,
+                    
+                    // Patrones naturales con verbos auxiliares
+                    /(puedes|podrias|me puedes) (crear|hacer|agregar|guardar)(me)? (una |alguna )?(nota|apunte)/,
+                    /(crear|crea|creame|hazme) (una |alguna )?(nota|apunte) (nueva|nuevo)?/,
+                    /(quiero|necesito|deseo) (crear|hacer|agregar|guardar|anotar) (una |alguna )?(nota|apunte)/,
+                    /(me ayudas|ayudame) (a |con )?(crear|hacer|guardar) (una |alguna )?(nota|apunte)/,
+                    
+                    // Patrones con acciones específicas
+                    /(guardar|anotar|registrar|escribir) (esto|algo|informacion|datos|una nota|un apunte)/,
+                    /(anotar|anota|registra|guarda)(me)? (esto|algo) (en |como )?(una |alguna )?(nota|apunte)/,
+                    /(tomar|hacer|escribir|crear) (apuntes|notas) (de|para|sobre|nuevo)/,
+                    
+                    // Patrones coloquiales
+                    /nota (nueva|rapida|corta)/,
+                    /apunte (nuevo|rapido|corto)/,
+                    /(necesito|quiero) (guardar|anotar) (una |algo en una )?nota/,
+                    /(registrame|guardame|anotame|ponme) (una |alguna )?(nota|apunte)/,
+                    
+                    // Patrones imperativos
+                    /(haz|crea|registra|guarda|anota)(me)? (una |alguna )?(nota|apunte) (nueva|nuevo|rapida|rapido)?/
+                ],
+                keywords: ['crear', 'nueva', 'nuevo', 'nota', 'notas', 'apunte', 'apuntes', 'guardar', 'anotar', 'tomar', 'puedes', 'quiero', 'ayuda', 'registrar', 'escribir'],
+                priority: 17,
+                minScore: 12
+            },
+            
+            // Crear asignatura/materia
+            {
+                name: 'crear_asignatura',
+                patterns: [
+                    // Patrones básicos (mantener compatibilidad)
+                    /(crear|nueva|nuevo|agregar|anadir) (asignatura|materia|clase|curso)/,
+                    /^nueva (asignatura|materia)$/,
+                    /^crear (asignatura|materia)$/,
+                    /^agregar (asignatura|materia)$/,
+                    
+                    // Patrones naturales con verbos auxiliares
+                    /(puedes|podrias|me puedes) (crear|agregar|anadir)(me)? (una |alguna )?(asignatura|materia|clase|curso)/,
+                    /(crear|crea|creame|agregame|anademe) (una |alguna )?(asignatura|materia|clase|curso) (nueva|nuevo)?/,
+                    /(quiero|necesito|deseo) (crear|agregar|anadir|registrar) (una |alguna )?(asignatura|materia|clase)/,
+                    /(me ayudas|ayudame) (a |con )?(crear|agregar) (una |alguna )?(asignatura|materia|clase)/,
+                    
+                    // Patrones con acciones específicas
+                    /(agregar|anadir|registrar|dar de alta) (una |alguna )?(asignatura|materia|clase|curso)/,
+                    /(agregar|anade|registra|crea)(me)? (una |alguna )?(materia|asignatura|clase) (al sistema|nueva|nuevo)?/,
+                    
+                    // Patrones coloquiales
+                    /(materia|asignatura|clase|curso) (nueva|nuevo)/,
+                    /(nueva|nuevo) (materia|asignatura|clase|curso) (al sistema|a mi lista)?/,
+                    /(registrame|agregame|anademe|ponme) (una |alguna )?(materia|asignatura|clase)/,
+                    
+                    // Patrones imperativos
+                    /(agrega|anade|registra|crea)(me)? (una |alguna )?(materia|asignatura|clase|curso) (nueva|nuevo)?/,
+                    
+                    // Patrones específicos del contexto educativo
+                    /(inscribir|inscribirme) (en |a )?(una |alguna )?(materia|asignatura|clase)/
+                ],
+                keywords: ['crear', 'nueva', 'nuevo', 'agregar', 'anadir', 'asignatura', 'materia', 'clase', 'curso', 'registrar', 'puedes', 'quiero', 'ayuda', 'inscribir'],
+                priority: 17,
+                minScore: 12
+            },
+            
+            // Crear tarea
+            {
+                name: 'crear_tarea',
+                patterns: [
+                    // Patrones básicos (mantener compatibilidad)
+                    /(crear|nueva|nuevo|agregar|anadir) (tarea|tareas|pendiente|pendientes)/,
+                    /^nueva tarea$/,
+                    /^crear tarea$/,
+                    /^agregar tarea$/,
+                    /^registrar tarea$/,
+                    
+                    // Patrones naturales con verbos auxiliares
+                    /(puedes|podrias|me puedes) (crear|agregar|registrar)(me)? (una |alguna )?(tarea|pendiente|actividad)/,
+                    /(crear|crea|creame|registrame|agregame) (una |alguna )?(tarea|pendiente|actividad) (nueva|nuevo)?/,
+                    /(quiero|necesito|deseo) (crear|agregar|registrar|anotar) (una |alguna )?(tarea|pendiente|actividad)/,
+                    /(me ayudas|ayudame) (a |con )?(crear|agregar|registrar) (una |alguna )?(tarea|pendiente)/,
+                    
+                    // Patrones con acciones específicas
+                    /(anotar|registrar|guardar|poner|programar) (una |alguna )?(tarea|pendiente|recordatorio|actividad)/,
+                    /(anotar|anota|registra|guarda|pon)(me)? (una |alguna )?(tarea|pendiente) (para|de)?/,
+                    /(crear|agregar|programar) (recordatorio|reminder|alarma)/,
+                    
+                    // Patrones coloquiales
+                    /(tarea|pendiente|actividad) (nueva|nuevo|para)/,
+                    /(nueva|nuevo) (tarea|pendiente|actividad)/,
+                    /(registrame|guardame|anotame|ponme) (una |alguna )?(tarea|pendiente|actividad)/,
+                    
+                    // Patrones imperativos
+                    /(agrega|anade|registra|crea|pon)(me)? (una |alguna )?(tarea|pendiente|actividad) (nueva|nuevo)?/,
+                    
+                    // Patrones temporales comunes
+                    /(crear|agregar|anotar|poner) (una |alguna )?(tarea|pendiente) (para|de) (hoy|manana|esta semana|el)/,
+                    /(tarea|pendiente) (para el|de|para) (parcial|examen|proyecto|trabajo)/,
+                    
+                    // Sinónimos específicos
+                    /(crear|agregar) (un |alguna )?(trabajo|entrega|actividad|deberes)/
+                ],
+                keywords: ['crear', 'nueva', 'nuevo', 'agregar', 'tarea', 'tareas', 'pendiente', 'pendientes', 'registrar', 'recordatorio', 'puedes', 'quiero', 'ayuda', 'actividad', 'trabajo'],
+                priority: 17,
+                minScore: 12
+            },
             
             // Consulta general de asignaturas
             {
@@ -747,6 +888,13 @@ class StudyBot {
                 return this.handleConsultaDetalleAsignatura(entities);
             case 'consulta_notas':
                 return this.handleConsultaNotas(entities);
+            // ===== NUEVOS HANDLERS PARA CREACIÓN =====
+            case 'crear_nota':
+                return this.handleCrearNota();
+            case 'crear_asignatura':
+                return this.handleCrearAsignatura();
+            case 'crear_tarea':
+                return this.handleCrearTarea();
             // ===== HANDLERS EXISTENTES =====
             case 'motivacion_estudio':
                 return this.handleMotivacionEstudio(entities);
@@ -824,11 +972,13 @@ class StudyBot {
 
     handleAyudaGeneral() {
         return {
-            message: `🎓 **¡Bienvenido a E-StudyHub!**\n\nTu plataforma integral para el éxito académico. Aquí te explico todo lo que puedes hacer:\n\n🏠 **Dashboard** - Resumen de tu progreso y actividades\n📅 **Calendario** - Eventos, exámenes y entregas importantes\n📚 **Asignaturas** - Crear materias e invitar compañeros\n📝 **Notas** - Organiza apuntes con archivos adjuntos\n✅ **Tareas** - Gestiona pendientes y proyectos\n👤 **Perfil** - Personaliza tu información académica\n\n¿Te gustaría que te ayude con alguna sección específica?`,
+            message: `🎓 **¡Bienvenido a E-StudyHub!**\n\nTu plataforma integral para el éxito académico. Aquí te explico todo lo que puedes hacer:\n\n🏠 **Dashboard** - Resumen de tu progreso y actividades\n📅 **Calendario** - Eventos, exámenes y entregas importantes\n📚 **Asignaturas** - Crear materias e invitar compañeros\n📝 **Notas** - Organiza apuntes con archivos adjuntos\n✅ **Tareas** - Gestiona pendientes y proyectos\n👤 **Perfil** - Personaliza tu información académica\n\n🆕 **¡NUEVO! Creación mediante conversación:**\n• 📝 Crear notas paso a paso\n• 📚 Crear nuevas asignaturas\n• ✅ Crear tareas con fechas límite\n\n¿Te gustaría que te ayude con alguna sección específica o crear algo nuevo?`,
             quickReplies: [
-                { text: '📚 Cómo usar Asignaturas', action: 'help_subjects' },
+                { text: '📝 Crear nueva nota', action: 'crear_nota' },
+                { text: '📚 Crear asignatura', action: 'crear_asignatura' },
+                { text: '✅ Crear tarea', action: 'crear_tarea' },
+                { text: '📚 Ayuda con Asignaturas', action: 'help_subjects' },
                 { text: '📅 Organizar mi Calendario', action: 'help_calendar' },
-                { text: '✅ Gestionar Tareas', action: 'help_tasks' },
                 { text: '🔧 Resolver problemas', action: 'help_problems' }
             ]
         };
@@ -972,8 +1122,732 @@ class StudyBot {
     }
 
     // =================================================================
-    // NUEVOS HANDLERS PARA DATOS REALES DEL USUARIO
+    // NUEVOS HANDLERS PARA CREACIÓN DE CONTENIDO
     // =================================================================
+
+    handleCrearNota() {
+        // Inicializar flujo de creación de nota
+        this.conversationState = 'creatingNote';
+        this.pendingData = {
+            step: 1,
+            title: null,
+            content: null,
+            subjectId: null,
+            subjectName: null,
+            attachments: null
+        };
+
+        return {
+            message: '📓 **Perfecto, vamos a crear una nueva nota.**\n\n¿Cuál será el título de la nota? 📝',
+            quickReplies: [
+                { text: '❌ Cancelar', action: 'cancelar_flujo' }
+            ]
+        };
+    }
+
+    handleCrearAsignatura() {
+        // Inicializar flujo de creación de asignatura
+        this.conversationState = 'creatingSubject';
+        this.pendingData = {
+            step: 1,
+            name: null,
+            teacher: null,
+            groupCode: null,
+            color: null
+        };
+
+        return {
+            message: '📚 **Claro, vamos a crear una nueva asignatura.**\n\n¿Cómo se va a llamar la asignatura? 🎓',
+            quickReplies: [
+                { text: '❌ Cancelar', action: 'cancelar_flujo' }
+            ]
+        };
+    }
+
+    handleCrearTarea() {
+        // Inicializar flujo de creación de tarea
+        this.conversationState = 'creatingTask';
+        this.pendingData = {
+            step: 1,
+            title: null,
+            description: null,
+            dueDate: null,
+            subjectId: null,
+            subjectName: null
+        };
+
+        return {
+            message: '✅ **Perfecto, vamos a crear una tarea.**\n\n¿Cuál es el título de la tarea? 📋',
+            quickReplies: [
+                { text: '❌ Cancelar', action: 'cancelar_flujo' }
+            ]
+        };
+    }
+
+    // =================================================================
+    // FLUJOS CONVERSACIONALES MULTI-PASO
+    // =================================================================
+
+    async handleCreateNoteFlow(userMessage) {
+        const step = this.pendingData.step;
+
+        switch (step) {
+            case 1: // Título
+                return this.handleNoteStep1Title(userMessage);
+            case 2: // Contenido
+                return this.handleNoteStep2Content(userMessage);
+            case 3: // Asignatura
+                return this.handleNoteStep3Subject(userMessage);
+            case 4: // Adjuntos (opcional)
+                return this.handleNoteStep4Attachments(userMessage);
+            case 5: // Confirmación
+                return this.handleNoteStep5Confirmation(userMessage);
+            default:
+                // Estado inválido, resetear
+                this.resetConversationState();
+                return this.fallbackHandler([]);
+        }
+    }
+
+    handleNoteStep1Title(userMessage) {
+        const title = userMessage.trim();
+        
+        if (title === '' || title.length < 2) {
+            return {
+                message: '⚠️ Necesito un título válido para la nota. ¿Cuál quieres usar? 📝',
+                quickReplies: [
+                    { text: '❌ Cancelar', action: 'cancelar_flujo' }
+                ]
+            };
+        }
+
+        this.pendingData.title = title;
+        this.pendingData.step = 2;
+
+        return {
+            message: `✅ Perfecto! El título será: **"${title}"**\n\n¿Qué contenido deseas guardar en la nota? ✍️`,
+            quickReplies: [
+                { text: '❌ Cancelar', action: 'cancelar_flujo' }
+            ]
+        };
+    }
+
+    handleNoteStep2Content(userMessage) {
+        const content = userMessage.trim();
+        
+        if (content === '' || content.length < 2) {
+            return {
+                message: '⚠️ El contenido de la nota no puede estar vacío. ¿Qué quieres escribir? ✍️',
+                quickReplies: [
+                    { text: '❌ Cancelar', action: 'cancelar_flujo' }
+                ]
+            };
+        }
+
+        this.pendingData.content = content;
+        this.pendingData.step = 3;
+
+        return {
+            message: `📚 **¿Quieres asociar esta nota a alguna asignatura específica?**\n\nEscribe el nombre de la asignatura o responde **"ninguna"** si no quieres asociarla. 📖`,
+            quickReplies: [
+                { text: '🚫 Ninguna', action: 'no_asignatura' },
+                { text: '❌ Cancelar', action: 'cancelar_flujo' }
+            ]
+        };
+    }
+
+    async handleNoteStep3Subject(userMessage) {
+        const subjectInput = userMessage.trim().toLowerCase();
+
+        if (subjectInput === 'ninguna' || subjectInput === 'no' || subjectInput === 'sin asignatura') {
+            this.pendingData.subjectId = null;
+            this.pendingData.subjectName = 'Sin asignatura';
+            this.pendingData.step = 4;
+
+            return {
+                message: '📎 **¿Deseas adjuntar algún archivo a esta nota?**\n\n*(PDFs, imágenes, documentos)*\n\nPor ahora, crearé la nota sin adjuntos. Luego puedes agregar archivos desde la sección de Notas.\n\nResponde **"continuar"** para seguir. 📁',
+                quickReplies: [
+                    { text: '➡️ Continuar', action: 'continuar_nota' },
+                    { text: '❌ Cancelar', action: 'cancelar_flujo' }
+                ]
+            };
+        }
+
+        // Buscar asignatura
+        const matchingSubject = await this.findMatchingSubject(userMessage);
+
+        if (!matchingSubject) {
+            return {
+                message: `🔍 No encontré una asignatura llamada **"${userMessage}"**.\n\nPuedes intentar con otro nombre o responder **"ninguna"** para dejarla sin asignatura. 📚`,
+                quickReplies: [
+                    { text: '🚫 Ninguna', action: 'no_asignatura' },
+                    { text: '❌ Cancelar', action: 'cancelar_flujo' }
+                ]
+            };
+        }
+
+        this.pendingData.subjectId = matchingSubject.id;
+        this.pendingData.subjectName = matchingSubject.nombre;
+        this.pendingData.step = 4;
+
+        return {
+            message: `✅ Perfecto! La nota se asociará a **"${matchingSubject.nombre}"**.\n\n📎 **¿Deseas adjuntar algún archivo a esta nota?**\n\n*(PDFs, imágenes, documentos)*\n\nPor ahora, crearé la nota sin adjuntos. Luego puedes agregar archivos desde la sección de Notas.\n\nResponde **"continuar"** para seguir. 📁`,
+            quickReplies: [
+                { text: '➡️ Continuar', action: 'continuar_nota' },
+                { text: '❌ Cancelar', action: 'cancelar_flujo' }
+            ]
+        };
+    }
+
+    handleNoteStep4Attachments(userMessage) {
+        // Por simplicidad, saltamos adjuntos por ahora
+        this.pendingData.step = 5;
+
+        const summary = `📝 **Voy a crear la nota con estos datos:**\n\n• **Título:** ${this.pendingData.title}\n• **Contenido:** ${this.pendingData.content.substring(0, 100)}${this.pendingData.content.length > 100 ? '...' : ''}\n• **Asignatura:** ${this.pendingData.subjectName}\n• **Adjuntos:** Ninguno por ahora\n\n¿Confirmas que está correcto? 🤔`;
+
+        return {
+            message: summary,
+            quickReplies: [
+                { text: '✅ Sí, crear nota', action: 'confirmar_nota' },
+                { text: '❌ Cancelar', action: 'cancelar_flujo' }
+            ]
+        };
+    }
+
+    async handleNoteStep5Confirmation(userMessage) {
+        const confirmation = userMessage.trim().toLowerCase();
+
+        if (confirmation.includes('no') || confirmation.includes('cancelar')) {
+            return this.cancelCurrentFlow();
+        }
+
+        if (!confirmation.includes('si') && !confirmation.includes('sí') && !confirmation.includes('confirm') && !confirmation.includes('crear')) {
+            return {
+                message: '🤔 ¿Confirmas que quieres crear la nota con esos datos?\n\nResponde **"sí"** para confirmar o **"no"** para cancelar. ✅',
+                quickReplies: [
+                    { text: '✅ Sí, crear', action: 'confirmar_nota' },
+                    { text: '❌ No, cancelar', action: 'cancelar_flujo' }
+                ]
+            };
+        }
+
+        // Confirmar: crear la nota
+        return await this.executeCreateNote();
+    }
+
+    async executeCreateNote() {
+        try {
+            if (!window.dbManager || !window.dbManager.createNoteForCurrentUser) {
+                throw new Error('Sistema de base de datos no disponible');
+            }
+
+            const noteData = {
+                title: this.pendingData.title,
+                content: this.pendingData.content,
+                subjectId: this.pendingData.subjectId,
+                attachments: this.pendingData.attachments
+            };
+
+            const result = await window.dbManager.createNoteForCurrentUser(noteData);
+
+            // Resetear estado
+            this.resetConversationState();
+
+            if (result.success) {
+                return {
+                    message: `🎉 **¡Nota creada exitosamente!**\n\n✅ **"${result.data.titulo}"** ya está guardada en tu biblioteca de notas.\n\nPuedes verla y editarla desde la sección Notas. 📚`,
+                    quickReplies: [
+                        { text: '📝 Ir a mis notas', action: 'navigate_notes' },
+                        { text: '📚 Crear otra nota', action: 'crear_nota' },
+                        { text: '✅ Crear una tarea', action: 'crear_tarea' },
+                        { text: '🏠 Ir al Dashboard', action: 'navigate_dashboard' }
+                    ]
+                };
+            } else {
+                return {
+                    message: `❌ **Hubo un problema al crear la nota:**\n\n${result.error}\n\nPuedes intentar de nuevo o crear la nota manualmente desde la sección Notas. 🔧`,
+                    quickReplies: [
+                        { text: '🔄 Intentar de nuevo', action: 'crear_nota' },
+                        { text: '📝 Ir a Notas', action: 'navigate_notes' },
+                        { text: '❓ Obtener ayuda', action: 'show_help' }
+                    ]
+                };
+            }
+
+        } catch (error) {
+            console.error('Error ejecutando creación de nota:', error);
+            this.resetConversationState();
+
+            return {
+                message: '❌ **Ocurrió un error técnico al crear la nota.**\n\nPor favor, intenta crear la nota manualmente desde la sección Notas o contacta soporte técnico. 🔧',
+                quickReplies: [
+                    { text: '📝 Ir a Notas', action: 'navigate_notes' },
+                    { text: '🔄 Intentar de nuevo', action: 'crear_nota' },
+                    { text: '❓ Obtener ayuda', action: 'show_help' }
+                ]
+            };
+        }
+    }
+
+    async handleCreateSubjectFlow(userMessage) {
+        const step = this.pendingData.step;
+
+        switch (step) {
+            case 1: // Nombre de la asignatura
+                return this.handleSubjectStep1Name(userMessage);
+            case 2: // Profesor
+                return this.handleSubjectStep2Teacher(userMessage);
+            case 3: // Código/Grupo
+                return this.handleSubjectStep3Group(userMessage);
+            case 4: // Color (opcional)
+                return this.handleSubjectStep4Color(userMessage);
+            case 5: // Confirmación
+                return this.handleSubjectStep5Confirmation(userMessage);
+            default:
+                this.resetConversationState();
+                return this.fallbackHandler([]);
+        }
+    }
+
+    handleSubjectStep1Name(userMessage) {
+        const name = userMessage.trim();
+        
+        if (name === '' || name.length < 2) {
+            return {
+                message: '⚠️ Necesito un nombre válido para la asignatura. ¿Cómo se va a llamar? 📚',
+                quickReplies: [
+                    { text: '❌ Cancelar', action: 'cancelar_flujo' }
+                ]
+            };
+        }
+
+        this.pendingData.name = name;
+        this.pendingData.step = 2;
+
+        return {
+            message: `✅ La asignatura se llamará: **"${name}"**\n\n👨‍🏫 **¿Quieres guardar el nombre del profesor?**\n\nEscribe el nombre del profesor o responde **"ninguno"** si no quieres especificarlo. 👩‍🏫`,
+            quickReplies: [
+                { text: '🚫 Ninguno', action: 'no_profesor' },
+                { text: '❌ Cancelar', action: 'cancelar_flujo' }
+            ]
+        };
+    }
+
+    handleSubjectStep2Teacher(userMessage) {
+        const teacherInput = userMessage.trim();
+        
+        if (teacherInput.toLowerCase() === 'ninguno' || teacherInput.toLowerCase() === 'no') {
+            this.pendingData.teacher = null;
+        } else if (teacherInput.length < 2) {
+            return {
+                message: '⚠️ El nombre del profesor es muy corto. ¿Puedes escribirlo completo o responder **"ninguno"**? 👨‍🏫',
+                quickReplies: [
+                    { text: '🚫 Ninguno', action: 'no_profesor' },
+                    { text: '❌ Cancelar', action: 'cancelar_flujo' }
+                ]
+            };
+        } else {
+            this.pendingData.teacher = teacherInput;
+        }
+
+        this.pendingData.step = 3;
+
+        const teacherText = this.pendingData.teacher ? `**"${this.pendingData.teacher}"**` : 'Sin especificar';
+
+        return {
+            message: `👨‍🏫 Profesor: ${teacherText}\n\n🏫 **¿Esta asignatura tiene algún código o grupo?**\n\n*(Por ejemplo: "GRUPO A", "101", "MAT-001")*\n\nEscribe el código o responde **"ninguno"** si no tiene. 🔢`,
+            quickReplies: [
+                { text: '🚫 Ninguno', action: 'no_codigo' },
+                { text: '❌ Cancelar', action: 'cancelar_flujo' }
+            ]
+        };
+    }
+
+    handleSubjectStep3Group(userMessage) {
+        const groupInput = userMessage.trim();
+        
+        if (groupInput.toLowerCase() === 'ninguno' || groupInput.toLowerCase() === 'no') {
+            this.pendingData.groupCode = null;
+        } else if (groupInput.length < 1) {
+            return {
+                message: '⚠️ El código parece estar vacío. ¿Puedes escribirlo de nuevo o responder **"ninguno"**? 🔢',
+                quickReplies: [
+                    { text: '🚫 Ninguno', action: 'no_codigo' },
+                    { text: '❌ Cancelar', action: 'cancelar_flujo' }
+                ]
+            };
+        } else {
+            this.pendingData.groupCode = groupInput;
+        }
+
+        this.pendingData.step = 4;
+
+        const groupText = this.pendingData.groupCode ? `**"${this.pendingData.groupCode}"**` : 'Sin especificar';
+
+        return {
+            message: `🏫 Código/Grupo: ${groupText}\n\n🎨 **¿Quieres asignarle un color específico?**\n\nPuedes escribir un color (azul, rojo, verde, amarillo, morado, naranja) o responder **"por defecto"** para usar azul. 🌈`,
+            quickReplies: [
+                { text: '🔵 Azul', action: 'color_azul' },
+                { text: '🔴 Rojo', action: 'color_rojo' },
+                { text: '🟢 Verde', action: 'color_verde' },
+                { text: '🟡 Amarillo', action: 'color_amarillo' },
+                { text: '🟠 Por defecto', action: 'color_defecto' },
+                { text: '❌ Cancelar', action: 'cancelar_flujo' }
+            ]
+        };
+    }
+
+    handleSubjectStep4Color(userMessage) {
+        const colorInput = userMessage.trim().toLowerCase();
+        
+        const colorMap = {
+            'azul': '#3B82F6',
+            'rojo': '#EF4444',
+            'red': '#EF4444',
+            'verde': '#10B981',
+            'green': '#10B981',
+            'amarillo': '#F59E0B',
+            'yellow': '#F59E0B',
+            'morado': '#8B5CF6',
+            'purple': '#8B5CF6',
+            'naranja': '#F97316',
+            'orange': '#F97316',
+            'por defecto': '#3B82F6',
+            'defecto': '#3B82F6'
+        };
+
+        this.pendingData.color = colorMap[colorInput] || '#3B82F6'; // Azul por defecto
+        this.pendingData.step = 5;
+
+        const colorName = Object.keys(colorMap).find(key => colorMap[key] === this.pendingData.color) || 'azul';
+
+        const summary = `📚 **Voy a crear la asignatura:**\n\n• **Nombre:** ${this.pendingData.name}\n• **Profesor:** ${this.pendingData.teacher || 'Sin especificar'}\n• **Código/Grupo:** ${this.pendingData.groupCode || 'Sin especificar'}\n• **Color:** ${colorName}\n\n¿Confirmas que está correcto? 🤔`;
+
+        return {
+            message: summary,
+            quickReplies: [
+                { text: '✅ Sí, crear asignatura', action: 'confirmar_asignatura' },
+                { text: '❌ Cancelar', action: 'cancelar_flujo' }
+            ]
+        };
+    }
+
+    async handleSubjectStep5Confirmation(userMessage) {
+        const confirmation = userMessage.trim().toLowerCase();
+
+        if (confirmation.includes('no') || confirmation.includes('cancelar')) {
+            return this.cancelCurrentFlow();
+        }
+
+        if (!confirmation.includes('si') && !confirmation.includes('sí') && !confirmation.includes('confirm') && !confirmation.includes('crear')) {
+            return {
+                message: '🤔 ¿Confirmas que quieres crear la asignatura con esos datos?\n\nResponde **"sí"** para confirmar o **"no"** para cancelar. ✅',
+                quickReplies: [
+                    { text: '✅ Sí, crear', action: 'confirmar_asignatura' },
+                    { text: '❌ No, cancelar', action: 'cancelar_flujo' }
+                ]
+            };
+        }
+
+        return await this.executeCreateSubject();
+    }
+
+    async executeCreateSubject() {
+        try {
+            if (!window.dbManager || !window.dbManager.createSubjectForCurrentUser) {
+                throw new Error('Sistema de base de datos no disponible');
+            }
+
+            const subjectData = {
+                name: this.pendingData.name,
+                teacherName: this.pendingData.teacher,
+                groupCode: this.pendingData.groupCode,
+                color: this.pendingData.color
+            };
+
+            const result = await window.dbManager.createSubjectForCurrentUser(subjectData);
+
+            this.resetConversationState();
+
+            if (result.success) {
+                return {
+                    message: `🎉 **¡Asignatura creada exitosamente!**\n\n📚 **"${result.data.nombre}"** ya está disponible en tu lista de asignaturas.\n\nPuedes verla, gestionar colaboradores y crear contenido asociado. 🎓`,
+                    quickReplies: [
+                        { text: '📚 Ir a Asignaturas', action: 'navigate_subjects' },
+                        { text: '📝 Crear nota para esta asignatura', action: 'crear_nota' },
+                        { text: '✅ Crear tarea', action: 'crear_tarea' },
+                        { text: '📅 Ver calendario', action: 'navigate_calendar' }
+                    ]
+                };
+            } else {
+                return {
+                    message: `❌ **Hubo un problema al crear la asignatura:**\n\n${result.error}\n\nPuedes intentar de nuevo o crearla manualmente desde la sección Asignaturas. 🔧`,
+                    quickReplies: [
+                        { text: '🔄 Intentar de nuevo', action: 'crear_asignatura' },
+                        { text: '📚 Ir a Asignaturas', action: 'navigate_subjects' },
+                        { text: '❓ Obtener ayuda', action: 'show_help' }
+                    ]
+                };
+            }
+
+        } catch (error) {
+            console.error('Error ejecutando creación de asignatura:', error);
+            this.resetConversationState();
+
+            return {
+                message: '❌ **Ocurrió un error técnico al crear la asignatura.**\n\nPor favor, intenta crearla manualmente desde la sección Asignaturas o contacta soporte técnico. 🔧',
+                quickReplies: [
+                    { text: '📚 Ir a Asignaturas', action: 'navigate_subjects' },
+                    { text: '🔄 Intentar de nuevo', action: 'crear_asignatura' },
+                    { text: '❓ Obtener ayuda', action: 'show_help' }
+                ]
+            };
+        }
+    }
+
+    async handleCreateTaskFlow(userMessage) {
+        const step = this.pendingData.step;
+
+        switch (step) {
+            case 1: // Título de la tarea
+                return this.handleTaskStep1Title(userMessage);
+            case 2: // Descripción
+                return this.handleTaskStep2Description(userMessage);
+            case 3: // Fecha límite
+                return this.handleTaskStep3DueDate(userMessage);
+            case 4: // Asignatura
+                return this.handleTaskStep4Subject(userMessage);
+            case 5: // Confirmación
+                return this.handleTaskStep5Confirmation(userMessage);
+            default:
+                this.resetConversationState();
+                return this.fallbackHandler([]);
+        }
+    }
+
+    handleTaskStep1Title(userMessage) {
+        const title = userMessage.trim();
+        
+        if (title === '' || title.length < 2) {
+            return {
+                message: '⚠️ Necesito un título válido para la tarea. ¿Cuál es el título? 📋',
+                quickReplies: [
+                    { text: '❌ Cancelar', action: 'cancelar_flujo' }
+                ]
+            };
+        }
+
+        this.pendingData.title = title;
+        this.pendingData.step = 2;
+
+        return {
+            message: `✅ El título será: **"${title}"**\n\n📝 **¿Quieres agregar una descripción o detalle para esta tarea?**\n\nEscribe la descripción o responde **"ninguna"** si no necesitas descripción. 📄`,
+            quickReplies: [
+                { text: '🚫 Ninguna', action: 'no_descripcion' },
+                { text: '❌ Cancelar', action: 'cancelar_flujo' }
+            ]
+        };
+    }
+
+    handleTaskStep2Description(userMessage) {
+        const descriptionInput = userMessage.trim();
+        
+        if (descriptionInput.toLowerCase() === 'ninguna' || descriptionInput.toLowerCase() === 'no') {
+            this.pendingData.description = null;
+        } else if (descriptionInput.length < 2) {
+            return {
+                message: '⚠️ La descripción es muy corta. ¿Puedes escribir más detalles o responder **"ninguna"**? 📝',
+                quickReplies: [
+                    { text: '🚫 Ninguna', action: 'no_descripcion' },
+                    { text: '❌ Cancelar', action: 'cancelar_flujo' }
+                ]
+            };
+        } else {
+            this.pendingData.description = descriptionInput;
+        }
+
+        this.pendingData.step = 3;
+
+        const descriptionText = this.pendingData.description ? `**"${this.pendingData.description.substring(0, 50)}${this.pendingData.description.length > 50 ? '...' : ''}"**` : 'Sin descripción';
+
+        return {
+            message: `📝 Descripción: ${descriptionText}\n\n📅 **¿Cuál es la fecha límite de la tarea?**\n\nEscribe la fecha en formato: **20/11/2025** o **20-11-2025** 🗓️`,
+            quickReplies: [
+                { text: '❌ Cancelar', action: 'cancelar_flujo' }
+            ]
+        };
+    }
+
+    handleTaskStep3DueDate(userMessage) {
+        const dateInput = userMessage.trim();
+        
+        const parsedDate = this.parseDate(dateInput);
+        
+        if (!parsedDate) {
+            return {
+                message: '⚠️ **No he entendido bien la fecha** 😅\n\nEscríbela de nuevo con formato día/mes/año, por ejemplo: **20/11/2025** o **20-11-2025** 📅',
+                quickReplies: [
+                    { text: '❌ Cancelar', action: 'cancelar_flujo' }
+                ]
+            };
+        }
+
+        if (parsedDate.error) {
+            return {
+                message: `⚠️ **${parsedDate.error}** 😅\n\nPor favor, escribe una fecha futura con formato día/mes/año: **20/11/2025** 📅`,
+                quickReplies: [
+                    { text: '❌ Cancelar', action: 'cancelar_flujo' }
+                ]
+            };
+        }
+
+        this.pendingData.dueDate = parsedDate;
+        this.pendingData.step = 4;
+
+        const formattedDate = parsedDate.toLocaleDateString('es-ES', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
+
+        return {
+            message: `📅 Fecha límite: **${formattedDate}**\n\n📚 **¿Esta tarea está asociada a alguna asignatura?**\n\nEscribe el nombre de la asignatura o responde **"ninguna"** si es una tarea personal. 🎓`,
+            quickReplies: [
+                { text: '🚫 Ninguna', action: 'no_asignatura' },
+                { text: '❌ Cancelar', action: 'cancelar_flujo' }
+            ]
+        };
+    }
+
+    async handleTaskStep4Subject(userMessage) {
+        const subjectInput = userMessage.trim().toLowerCase();
+
+        if (subjectInput === 'ninguna' || subjectInput === 'no' || subjectInput === 'personal') {
+            this.pendingData.subjectId = null;
+            this.pendingData.subjectName = 'Tarea personal';
+            this.pendingData.step = 5;
+
+            return this.generateTaskConfirmation();
+        }
+
+        // Buscar asignatura
+        const matchingSubject = await this.findMatchingSubject(userMessage);
+
+        if (!matchingSubject) {
+            return {
+                message: `🔍 No encontré una asignatura llamada **"${userMessage}"**.\n\nPuedes intentar con otro nombre o responder **"ninguna"** para crear una tarea personal. 📚`,
+                quickReplies: [
+                    { text: '🚫 Ninguna', action: 'no_asignatura' },
+                    { text: '❌ Cancelar', action: 'cancelar_flujo' }
+                ]
+            };
+        }
+
+        this.pendingData.subjectId = matchingSubject.id;
+        this.pendingData.subjectName = matchingSubject.nombre;
+        this.pendingData.step = 5;
+
+        return this.generateTaskConfirmation();
+    }
+
+    generateTaskConfirmation() {
+        const formattedDate = this.pendingData.dueDate.toLocaleDateString('es-ES', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
+
+        const summary = `✅ **Voy a crear la tarea:**\n\n• **Título:** ${this.pendingData.title}\n• **Descripción:** ${this.pendingData.description || 'Sin descripción'}\n• **Fecha límite:** ${formattedDate}\n• **Asignatura:** ${this.pendingData.subjectName}\n\n¿Confirmas que está correcto? 🤔`;
+
+        return {
+            message: summary,
+            quickReplies: [
+                { text: '✅ Sí, crear tarea', action: 'confirmar_tarea' },
+                { text: '❌ Cancelar', action: 'cancelar_flujo' }
+            ]
+        };
+    }
+
+    async handleTaskStep5Confirmation(userMessage) {
+        const confirmation = userMessage.trim().toLowerCase();
+
+        if (confirmation.includes('no') || confirmation.includes('cancelar')) {
+            return this.cancelCurrentFlow();
+        }
+
+        if (!confirmation.includes('si') && !confirmation.includes('sí') && !confirmation.includes('confirm') && !confirmation.includes('crear')) {
+            return {
+                message: '🤔 ¿Confirmas que quieres crear la tarea con esos datos?\n\nResponde **"sí"** para confirmar o **"no"** para cancelar. ✅',
+                quickReplies: [
+                    { text: '✅ Sí, crear', action: 'confirmar_tarea' },
+                    { text: '❌ No, cancelar', action: 'cancelar_flujo' }
+                ]
+            };
+        }
+
+        return await this.executeCreateTask();
+    }
+
+    async executeCreateTask() {
+        try {
+            if (!window.dbManager || !window.dbManager.createTaskForCurrentUser) {
+                throw new Error('Sistema de base de datos no disponible');
+            }
+
+            const taskData = {
+                title: this.pendingData.title,
+                description: this.pendingData.description,
+                dueDate: this.pendingData.dueDate.toISOString(),
+                subjectId: this.pendingData.subjectId
+            };
+
+            const result = await window.dbManager.createTaskForCurrentUser(taskData);
+
+            this.resetConversationState();
+
+            if (result.success) {
+                const formattedDate = this.pendingData.dueDate.toLocaleDateString('es-ES', {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric'
+                });
+
+                return {
+                    message: `🎉 **¡Tarea creada exitosamente!**\n\n✅ **"${result.data.titulo}"** está programada para el **${formattedDate}**.\n\nPuedes verla en la sección Tareas y en tu calendario. 📅`,
+                    quickReplies: [
+                        { text: '✅ Ver mis tareas', action: 'navigate_tasks' },
+                        { text: '📅 Ver calendario', action: 'navigate_calendar' },
+                        { text: '✅ Crear otra tarea', action: 'crear_tarea' },
+                        { text: '📝 Crear una nota', action: 'crear_nota' }
+                    ]
+                };
+            } else {
+                return {
+                    message: `❌ **Hubo un problema al crear la tarea:**\n\n${result.error}\n\nPuedes intentar de nuevo o crearla manualmente desde la sección Tareas. 🔧`,
+                    quickReplies: [
+                        { text: '🔄 Intentar de nuevo', action: 'crear_tarea' },
+                        { text: '✅ Ir a Tareas', action: 'navigate_tasks' },
+                        { text: '❓ Obtener ayuda', action: 'show_help' }
+                    ]
+                };
+            }
+
+        } catch (error) {
+            console.error('Error ejecutando creación de tarea:', error);
+            this.resetConversationState();
+
+            return {
+                message: '❌ **Ocurrió un error técnico al crear la tarea.**\n\nPor favor, intenta crearla manualmente desde la sección Tareas o contacta soporte técnico. 🔧',
+                quickReplies: [
+                    { text: '✅ Ir a Tareas', action: 'navigate_tasks' },
+                    { text: '🔄 Intentar de nuevo', action: 'crear_tarea' },
+                    { text: '❓ Obtener ayuda', action: 'show_help' }
+                ]
+            };
+        }
+    }
 
     handleConsultaNombreUsuario() {
         const nombre = this.getUserName();
@@ -1427,8 +2301,14 @@ class StudyBot {
 
     async processMessage(userMessage) {
         if (!userMessage || !userMessage.trim()) return null;
+
+        // ========== NUEVO: MANEJO DE FLUJOS CONVERSACIONALES ==========
+        // Si hay un flujo activo, manejarlo primero
+        if (this.conversationState !== null) {
+            return this.handleConversationFlow(userMessage);
+        }
         
-        // Pipeline de procesamiento
+        // Pipeline de procesamiento normal
         const normalizedText = this.normalizeInput(userMessage);
         const tokens = this.tokenize(normalizedText);
         const intentData = this.detectIntent(normalizedText, tokens);
@@ -1441,6 +2321,139 @@ class StudyBot {
             return this.handleIntent(intentData);
         } else {
             return this.fallbackHandler(tokens);
+        }
+    }
+
+    // ========== NUEVO: MANEJADOR DE FLUJOS CONVERSACIONALES ==========
+    async handleConversationFlow(userMessage) {
+        const normalizedMessage = userMessage.trim().toLowerCase();
+
+        // Detectar cancelación
+        if (this.isCancellationMessage(normalizedMessage)) {
+            return this.cancelCurrentFlow();
+        }
+
+        // Manejar según el flujo activo
+        switch (this.conversationState) {
+            case 'creatingNote':
+                return this.handleCreateNoteFlow(userMessage);
+            case 'creatingSubject':
+                return this.handleCreateSubjectFlow(userMessage);
+            case 'creatingTask':
+                return this.handleCreateTaskFlow(userMessage);
+            default:
+                // Estado desconocido, resetear
+                this.resetConversationState();
+                return this.fallbackHandler([]);
+        }
+    }
+
+    // ========== FUNCIONES DE UTILIDAD PARA FLUJOS ==========
+    isCancellationMessage(normalizedMessage) {
+        const cancelKeywords = ['cancelar', 'anular', 'olvídalo', 'olvidalo', 'olvida', 'déjalo', 'dejalo', 'salir', 'parar', 'stop'];
+        return cancelKeywords.some(keyword => normalizedMessage.includes(keyword));
+    }
+
+    cancelCurrentFlow() {
+        const currentFlow = this.conversationState;
+        this.resetConversationState();
+        
+        const flowNames = {
+            'creatingNote': 'la creación de la nota',
+            'creatingSubject': 'la creación de la asignatura',
+            'creatingTask': 'la creación de la tarea'
+        };
+        
+        const flowName = flowNames[currentFlow] || 'el proceso actual';
+        
+        return {
+            message: `✅ He cancelado ${flowName}. Si quieres intentar crear algo más tarde, solo dímelo. 😊`,
+            quickReplies: [
+                { text: '📝 Crear nota', action: 'crear_nota' },
+                { text: '📚 Crear asignatura', action: 'crear_asignatura' },
+                { text: '✅ Crear tarea', action: 'crear_tarea' },
+                { text: '❓ Ver opciones', action: 'show_help' }
+            ]
+        };
+    }
+
+    resetConversationState() {
+        this.conversationState = null;
+        this.pendingData = {};
+    }
+
+    // ========== PARSEO DE FECHAS PARA TAREAS ==========
+    parseDate(dateInput) {
+        if (!dateInput || dateInput.trim() === '') return null;
+        
+        const input = dateInput.trim();
+        
+        // Patrones de fecha esperados: DD/MM/AAAA, DD-MM-AAAA
+        const datePatterns = [
+            /^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/, // DD/MM/AAAA o DD-MM-AAAA
+            /^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})$/, // AAAA/MM/DD o AAAA-MM-DD
+        ];
+        
+        for (const pattern of datePatterns) {
+            const match = input.match(pattern);
+            if (match) {
+                let day, month, year;
+                
+                if (pattern === datePatterns[0]) {
+                    // DD/MM/AAAA
+                    [, day, month, year] = match;
+                } else {
+                    // AAAA/MM/DD
+                    [, year, month, day] = match;
+                }
+                
+                // Crear fecha (JavaScript usa meses 0-11)
+                const parsedDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+                
+                // Validar que la fecha sea válida
+                if (isNaN(parsedDate.getTime())) {
+                    return null;
+                }
+                
+                // Validar que no sea una fecha del pasado
+                const today = new Date();
+                today.setHours(0, 0, 0, 0); // Ignorar horas
+                
+                if (parsedDate < today) {
+                    return { error: 'La fecha no puede ser en el pasado' };
+                }
+                
+                return parsedDate;
+            }
+        }
+        
+        return null;
+    }
+
+    // ========== BÚSQUEDA DE ASIGNATURAS ==========
+    async findMatchingSubject(subjectName) {
+        if (!subjectName || subjectName.trim() === '' || subjectName.toLowerCase() === 'ninguna') {
+            return null;
+        }
+
+        try {
+            if (window.dbManager && window.dbManager.findSubjectsByName) {
+                const matches = await window.dbManager.findSubjectsByName(subjectName);
+                return matches.length > 0 ? matches[0] : null;
+            }
+            
+            // Fallback: buscar en this.userSubjects si está disponible
+            if (this.userSubjects && this.userSubjects.length > 0) {
+                const searchTerm = subjectName.toLowerCase().trim();
+                return this.userSubjects.find(subject => 
+                    subject.nombre.toLowerCase().includes(searchTerm)
+                ) || null;
+            }
+            
+            return null;
+        } catch (error) {
+            console.error('Error buscando asignatura:', error);
+            return null;
         }
     }
 
@@ -1486,13 +2499,16 @@ class StudyBot {
                             <div class="message-content">
                                 <p>¡Hola! 👋 Soy <strong>StudyBot</strong>, tu asistente académico personal en E-StudyHub.</p>
                                 <p>Estoy aquí para ayudarte a navegar y aprovechar al máximo todas las herramientas de estudio. 📚</p>
+                                <p><strong>🚀 NOVEDAD:</strong> ¡Ahora puedo crear <strong>notas</strong>, <strong>asignaturas</strong> y <strong>tareas</strong> mediante conversación guiada!</p>
                                 <p>¿Cómo puedo ayudarte a organizarte mejor hoy?</p>
                             </div>
                             <div class="quick-replies">
                                 <button class="quick-reply-btn" data-action="show_help">❓ ¿Qué puedes hacer?</button>
+                                <button class="quick-reply-btn" data-action="crear_nota">📝 Crear nueva nota</button>
+                                <button class="quick-reply-btn" data-action="crear_asignatura">📚 Crear asignatura</button>
+                                <button class="quick-reply-btn" data-action="crear_tarea">✅ Crear tarea</button>
                                 <button class="quick-reply-btn" data-action="navigate_subjects">📚 Mis asignaturas</button>
                                 <button class="quick-reply-btn" data-action="navigate_calendar">📅 Mi calendario</button>
-                                <button class="quick-reply-btn" data-action="navigate_tasks">✅ Mis tareas pendientes</button>
                             </div>
                         </div>
                     </div>
@@ -1545,7 +2561,8 @@ class StudyBot {
             panel.addEventListener('click', (e) => {
                 if (e.target.classList.contains('quick-reply-btn')) {
                     const action = e.target.dataset.action;
-                    this.handleQuickAction(action);
+                    const buttonText = e.target.innerText.trim();
+                    this.handleQuickAction(action, buttonText);
                 }
             });
         }
@@ -1794,28 +2811,125 @@ class StudyBot {
         }
     }
 
+    // ========== NUEVA FUNCIÓN PARA MANEJAR ACCIONES NLP ==========
+    async handleNlpQuickAction(messageForNLP, userVisibleText = null) {
+        try {
+            // Mostrar mensaje del usuario si se proporciona
+            if (userVisibleText) {
+                this.addMessage(userVisibleText, 'user');
+            }
+            
+            // Mostrar typing indicator después de un breve delay
+            setTimeout(() => {
+                this.showTypingIndicator();
+            }, 300);
+            
+            // Procesar mensaje
+            const response = await this.processMessage(messageForNLP);
+            
+            // Simular delay de "pensamiento" para mejor UX (igual que sendMessage)
+            await new Promise(resolve => setTimeout(resolve, 800 + Math.random() * 400));
+            
+            // Ocultar typing indicator
+            this.hideTypingIndicator();
+            
+            // Mostrar respuesta del bot si existe
+            if (response) {
+                this.addMessage(response.message, 'bot', response.quickReplies);
+            }
+        } catch (error) {
+            console.error('Error en handleNlpQuickAction:', error);
+            this.hideTypingIndicator();
+            
+            // Mostrar mensaje de error amigable
+            const errorMessage = '❌ Lo siento, ocurrió un problema procesando tu solicitud. ¿Podrías intentar de nuevo?';
+            this.addMessage(errorMessage, 'bot', [
+                { text: '❓ Ver opciones', action: 'show_help' },
+                { text: '🏠 Ir al Dashboard', action: 'navigate_dashboard' }
+            ]);
+        }
+    }
+
     // Manejo de acciones rápidas para mejorar UX
-    handleQuickAction(action) {
+    async handleQuickAction(action, buttonText = '') {
+        // Definir qué acciones son de navegación directa (no muestran mensaje del usuario)
+        const directNavigationActions = [
+            'navigate_dashboard', 'navigate_calendar', 'navigate_subjects', 
+            'navigate_notes', 'navigate_tasks', 'navigate_profile',
+            'show_access_code', 'keep_chat_open'
+        ];
+
+        // Definir qué acciones son de flujo (no muestran mensaje del usuario)
+        const flowActions = [
+            'cancelar_flujo', 'no_asignatura', 'no_profesor', 'no_codigo', 
+            'no_descripcion', 'continuar_nota', 'confirmar_nota', 
+            'confirmar_asignatura', 'confirmar_tarea', 'color_azul', 
+            'color_rojo', 'color_verde', 'color_amarillo', 'color_defecto'
+        ];
+
         const actions = {
-            'show_help': () => this.processMessage('ayuda general'),
+            // ========== ACCIONES QUE USAN NLP Y NECESITAN RESPUESTA ==========
+            'show_help': () => this.handleNlpQuickAction('ayuda general', buttonText),
+            'help_subjects': () => this.handleNlpQuickAction('ayuda con asignaturas', buttonText),
+            'help_calendar': () => this.handleNlpQuickAction('ayuda con calendario', buttonText),
+            'help_tasks': () => this.handleNlpQuickAction('ayuda con tareas', buttonText),
+            'help_notes': () => this.handleNlpQuickAction('ayuda con tareas y notas', buttonText),
+            'help_problems': () => this.handleNlpQuickAction('problemas comunes', buttonText),
+            'show_all_options': () => this.handleNlpQuickAction('que puedes hacer', buttonText),
+            'crear_nota': () => this.handleNlpQuickAction('crear nota', buttonText),
+            'crear_asignatura': () => this.handleNlpQuickAction('crear asignatura', buttonText),
+            'crear_tarea': () => this.handleNlpQuickAction('crear tarea', buttonText),
+            'gestion_estres': () => this.handleNlpQuickAction('gestion de estres', buttonText),
+            'motivacion_estudio': () => this.handleNlpQuickAction('motivacion para estudiar', buttonText),
+            
+            // ========== ACCIONES DE NAVEGACIÓN DIRECTA ==========
             'navigate_dashboard': () => this.handleDirectNavigation('dashboard'),
             'navigate_calendar': () => this.handleDirectNavigation('calendar'),
             'navigate_subjects': () => this.handleDirectNavigation('subjects'),
             'navigate_notes': () => this.handleDirectNavigation('notes'),
             'navigate_tasks': () => this.handleDirectNavigation('tasks'),
             'navigate_profile': () => this.handleDirectNavigation('profile'),
-            'help_subjects': () => this.processMessage('ayuda con asignaturas'),
-            'help_calendar': () => this.processMessage('ayuda con calendario'),
-            'help_tasks': () => this.processMessage('ayuda con tareas'),
-            'help_problems': () => this.processMessage('problemas comunes'),
             'show_access_code': () => this.showAccessCodeModal(),
-            'show_productivity_tips': () => this.showProductivityTips(),
-            'keep_chat_open': () => this.keepChatOpen()
+            'keep_chat_open': () => this.keepChatOpen(),
+            
+            // ========== ACCIONES ESPECIALES CON LÓGICA PROPIA ==========
+            'show_productivity_tips': () => {
+                if (buttonText) this.addMessage(buttonText, 'user');
+                this.showProductivityTips();
+            },
+            
+            // ========== ACCIONES PARA FLUJOS CONVERSACIONALES ==========
+            'cancelar_flujo': () => {
+                const response = this.cancelCurrentFlow();
+                this.addMessage(response.message, 'bot', response.quickReplies);
+            },
+            'no_asignatura': () => this.handleFlowAction('ninguna'),
+            'no_profesor': () => this.handleFlowAction('ninguno'),
+            'no_codigo': () => this.handleFlowAction('ninguno'),
+            'no_descripcion': () => this.handleFlowAction('ninguna'),
+            'continuar_nota': () => this.handleFlowAction('continuar'),
+            'confirmar_nota': () => this.handleFlowAction('sí'),
+            'confirmar_asignatura': () => this.handleFlowAction('sí'),
+            'confirmar_tarea': () => this.handleFlowAction('sí'),
+            // Colores para asignaturas
+            'color_azul': () => this.handleFlowAction('azul'),
+            'color_rojo': () => this.handleFlowAction('rojo'),
+            'color_verde': () => this.handleFlowAction('verde'),
+            'color_amarillo': () => this.handleFlowAction('amarillo'),
+            'color_defecto': () => this.handleFlowAction('por defecto')
         };
 
         const actionHandler = actions[action];
         if (actionHandler) {
-            actionHandler();
+            await actionHandler();
+        }
+    }
+
+    // ========== NUEVA FUNCIÓN PARA MANEJAR ACCIONES DE FLUJOS ==========
+    async handleFlowAction(actionMessage) {
+        if (this.conversationState !== null) {
+            const response = await this.handleConversationFlow(actionMessage);
+            this.addMessage(response.message, 'bot', response.quickReplies);
         }
     }
 

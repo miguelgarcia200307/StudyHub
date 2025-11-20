@@ -1742,6 +1742,249 @@ class DatabaseManager {
         }
     }
 
+    // =================================================================
+    // FUNCIONES PARA STUDYBOT - CREACIÓN VÍA CONVERSACIÓN
+    // =================================================================
+
+    /**
+     * Crear una nueva nota para el usuario actual (para StudyBot)
+     * @param {Object} noteData - Datos de la nota { title, content, subjectId, attachments }
+     * @returns {Object} - { success: boolean, data: nota, error: string }
+     */
+    async createNoteForCurrentUser({ title, content, subjectId, attachments }) {
+        try {
+            const user = await this.getCurrentUser();
+            if (!user) {
+                return { success: false, error: 'Usuario no autenticado' };
+            }
+
+            // Validar datos obligatorios
+            if (!title || title.trim() === '') {
+                return { success: false, error: 'El título es obligatorio' };
+            }
+
+            if (!content || content.trim() === '') {
+                return { success: false, error: 'El contenido es obligatorio' };
+            }
+
+            // Validar asignatura si se especificó
+            if (subjectId) {
+                const { data: subject, error } = await this.supabase
+                    .from('asignaturas_usuarios')
+                    .select('asignatura_id')
+                    .eq('asignatura_id', subjectId)
+                    .eq('usuario_id', user.id)
+                    .maybeSingle();
+
+                if (error || !subject) {
+                    return { success: false, error: 'La asignatura especificada no existe o no tienes acceso a ella' };
+                }
+            }
+
+            // Crear la nota
+            const noteRecord = {
+                titulo: title.trim(),
+                contenido: content.trim(),
+                autor_id: user.id,
+                asignatura_id: subjectId || null,
+                fecha_creacion: new Date().toISOString(),
+                fecha_actualizacion: new Date().toISOString(),
+                fijada: false,
+                tiene_adjuntos: false,
+                color_etiqueta: 'blue',
+                etiquetas: []
+            };
+
+            const { data: nota, error: createError } = await this.supabase
+                .from('notas')
+                .insert([noteRecord])
+                .select('*')
+                .single();
+
+            if (createError) {
+                console.error('Error creando nota para StudyBot:', createError);
+                return { success: false, error: 'Error al crear la nota en la base de datos' };
+            }
+
+            console.log('✅ Nota creada exitosamente para StudyBot:', nota.titulo);
+            
+            return { 
+                success: true, 
+                data: nota,
+                message: `Nota "${nota.titulo}" creada exitosamente`
+            };
+
+        } catch (error) {
+            console.error('Error en createNoteForCurrentUser:', error);
+            return { success: false, error: 'Error interno al crear la nota' };
+        }
+    }
+
+    /**
+     * Crear una nueva asignatura para el usuario actual (para StudyBot)
+     * @param {Object} subjectData - Datos de la asignatura { name, teacherName, groupCode, color }
+     * @returns {Object} - { success: boolean, data: asignatura, error: string }
+     */
+    async createSubjectForCurrentUser({ name, teacherName, groupCode, color }) {
+        try {
+            const user = await this.getCurrentUser();
+            if (!user) {
+                return { success: false, error: 'Usuario no autenticado' };
+            }
+
+            // Validar datos obligatorios
+            if (!name || name.trim() === '') {
+                return { success: false, error: 'El nombre de la asignatura es obligatorio' };
+            }
+
+            // Preparar datos de la asignatura
+            const subjectRecord = {
+                nombre: name.trim(),
+                profesor: teacherName?.trim() || 'Sin especificar',
+                horario: groupCode?.trim() || 'Sin especificar',
+                salon: groupCode?.trim() || '',
+                color: color || '#3B82F6' // Azul por defecto
+            };
+
+            // Usar la función existente que maneja el trigger automático
+            const result = await this.createSubject(subjectRecord);
+
+            if (result.success) {
+                console.log('✅ Asignatura creada exitosamente para StudyBot:', result.data.nombre);
+                
+                return {
+                    success: true,
+                    data: result.data,
+                    message: `Asignatura "${result.data.nombre}" creada exitosamente`
+                };
+            } else {
+                return {
+                    success: false,
+                    error: result.error || 'Error al crear la asignatura'
+                };
+            }
+
+        } catch (error) {
+            console.error('Error en createSubjectForCurrentUser:', error);
+            return { success: false, error: 'Error interno al crear la asignatura' };
+        }
+    }
+
+    /**
+     * Crear una nueva tarea para el usuario actual (para StudyBot)
+     * @param {Object} taskData - Datos de la tarea { title, description, dueDate, subjectId }
+     * @returns {Object} - { success: boolean, data: tarea, error: string }
+     */
+    async createTaskForCurrentUser({ title, description, dueDate, subjectId }) {
+        try {
+            const user = await this.getCurrentUser();
+            if (!user) {
+                return { success: false, error: 'Usuario no autenticado' };
+            }
+
+            // Validar datos obligatorios
+            if (!title || title.trim() === '') {
+                return { success: false, error: 'El título de la tarea es obligatorio' };
+            }
+
+            if (!dueDate) {
+                return { success: false, error: 'La fecha límite es obligatoria' };
+            }
+
+            // Validar y parsear la fecha
+            let parsedDate;
+            try {
+                parsedDate = new Date(dueDate);
+                if (isNaN(parsedDate.getTime())) {
+                    throw new Error('Fecha inválida');
+                }
+            } catch (error) {
+                return { success: false, error: 'La fecha proporcionada no es válida' };
+            }
+
+            // Validar asignatura si se especificó
+            if (subjectId) {
+                const { data: subject, error } = await this.supabase
+                    .from('asignaturas_usuarios')
+                    .select('asignatura_id')
+                    .eq('asignatura_id', subjectId)
+                    .eq('usuario_id', user.id)
+                    .maybeSingle();
+
+                if (error || !subject) {
+                    return { success: false, error: 'La asignatura especificada no existe o no tienes acceso a ella' };
+                }
+            }
+
+            // Preparar datos de la tarea
+            const taskRecord = {
+                titulo: title.trim(),
+                descripcion: description?.trim() || '',
+                fecha_limite: parsedDate.toISOString(),
+                responsable_id: user.id,
+                asignatura_id: subjectId || null,
+                estado: 'pendiente',
+                prioridad: 'media',
+                fecha_creacion: new Date().toISOString()
+            };
+
+            // Usar la función existente para crear la tarea
+            const result = await this.createTask(taskRecord);
+
+            if (result.success) {
+                console.log('✅ Tarea creada exitosamente para StudyBot:', result.data.titulo);
+                
+                return {
+                    success: true,
+                    data: result.data,
+                    message: `Tarea "${result.data.titulo}" creada exitosamente`
+                };
+            } else {
+                return {
+                    success: false,
+                    error: result.error || 'Error al crear la tarea'
+                };
+            }
+
+        } catch (error) {
+            console.error('Error en createTaskForCurrentUser:', error);
+            return { success: false, error: 'Error interno al crear la tarea' };
+        }
+    }
+
+    /**
+     * Buscar asignaturas por nombre para StudyBot
+     * @param {string} searchTerm - Término de búsqueda
+     * @returns {Array} - Asignaturas que coinciden
+     */
+    async findSubjectsByName(searchTerm) {
+        try {
+            if (!searchTerm || searchTerm.trim() === '') {
+                return [];
+            }
+
+            const user = await this.getCurrentUser();
+            if (!user) return [];
+
+            // Buscar en asignaturas del usuario usando coincidencia aproximada
+            const subjects = await this.loadSubjects();
+            
+            const searchTermNormalized = searchTerm.toLowerCase().trim()
+                .normalize('NFD').replace(/[\u0300-\u036f]/g, ''); // Quitar acentos
+
+            return subjects.filter(subject => {
+                const subjectNameNormalized = subject.nombre.toLowerCase()
+                    .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+                
+                return subjectNameNormalized.includes(searchTermNormalized);
+            });
+
+        } catch (error) {
+            console.error('Error buscando asignaturas:', error);
+            return [];
+        }
+    }
+
     // Función para verificar estructuras de todas las tablas
     async debugTableStructures() {
         console.log('🔍 VERIFICANDO ESTRUCTURAS DE TABLAS');
