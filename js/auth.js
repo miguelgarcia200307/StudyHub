@@ -10,60 +10,120 @@
 
 class AuthManager {
     constructor() {
-        this.supabase = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+        // Usar el cliente Supabase único global (NO crear otro)
+        this.supabase = window.supabaseClient || null;
         this.currentUser = null;
+        this.authReady = false;
+        this.authReadyResolvers = [];
+        this.authInitialized = false;
+        this.appInitialized = false;
         this.initializeAuth();
+    }
+    
+    // Sistema authReady: permite que otros módulos esperen a que la auth esté lista
+    waitForAuthReady() {
+        if (this.authReady) {
+            return Promise.resolve(this.currentUser);
+        }
+        return new Promise(resolve => {
+            this.authReadyResolvers.push(resolve);
+        });
+    }
+    
+    // Marcar auth como lista y resolver todas las promesas pendientes
+    setAuthReady() {
+        if (this.authReady) return; // Prevenir múltiples llamadas
+        
+        this.authReady = true;
+        console.log('✅ Autenticación lista');
+        
+        // Resolver todas las promesas que estaban esperando
+        this.authReadyResolvers.forEach(resolve => resolve(this.currentUser));
+        this.authReadyResolvers = [];
     }
 
     // Inicializar sistema de autenticación
     async initializeAuth() {
         if (!this.supabase) {
-            console.error('Supabase no está configurado correctamente');
+            console.error('❌ Supabase no está configurado correctamente');
             this.hideLoadingScreen();
+            this.setAuthReady();
             return;
         }
 
+        console.log('🔐 Inicializando sistema de autenticación...');
+
         try {
-            // Verificar si hay una sesión activa
+            // 1. Verificar si hay una sesión activa (solo al inicio)
             const { data: { session } } = await this.supabase.auth.getSession();
             
-            if (session && session.user) {
-                // Verificar que el usuario tenga email confirmado
-                if (session.user.email_confirmed_at) {
-                    await this.handleAuthSuccess(session.user);
-                } else {
-                    // Usuario no confirmado, cerrar sesión y mostrar mensaje
-                    await this.supabase.auth.signOut();
-                    this.showAuthModal();
-                    this.showErrorMessage('Por favor confirma tu email antes de iniciar sesión');
-                }
+            if (session?.user && session.user.email_confirmed_at) {
+                console.log('✅ Sesión activa encontrada para:', session.user.email);
+                await this.handleAuthSuccess(session.user, { isInitialSession: true });
+            } else if (session?.user && !session.user.email_confirmed_at) {
+                console.warn('⚠️ Usuario no verificado');
+                await this.supabase.auth.signOut();
+                this.showAuthModal();
+                this.showErrorMessage('Por favor confirma tu email antes de iniciar sesión');
             } else {
+                console.log('ℹ️ No hay sesión activa, mostrando modal de autenticación');
                 this.showAuthModal();
             }
         } catch (error) {
-            console.error('Error al inicializar autenticación:', error);
+            console.error('❌ Error al verificar sesión inicial:', error);
             this.showAuthModal();
         }
         
-        // Ocultar pantalla de carga después de verificar auth
+        // 2. Ocultar pantalla de carga
         this.hideLoadingScreen();
+        
+        // 3. Marcar auth como inicializada ANTES del listener
+        this.authInitialized = true;
+        
+        // 4. Marcar auth como lista (importante para que AppManager pueda continuar)
+        this.setAuthReady();
 
-        // Escuchar cambios de autenticación
+        // 5. Configurar listener para cambios posteriores (login/logout nuevos)
         this.supabase.auth.onAuthStateChange(async (event, session) => {
-            console.log('Auth state changed:', event);
+            console.log('🔔 Auth state changed:', event);
             
+            // Manejar diferentes eventos de autenticación
             if (event === 'SIGNED_IN' && session?.user) {
-                // Verificar confirmación de email
-                if (session.user.email_confirmed_at) {
-                    await this.handleAuthSuccess(session.user);
-                } else {
+                // SIGNED_IN se dispara en:
+                // 1. Login inicial (ya manejado por getSession() arriba)
+                // 2. Cambio de pestaña/foco (NO queremos procesar)
+                // 3. Nuevo login explícito del usuario (SÍ queremos procesar)
+                
+                // Solo procesar si NO hay usuario actual (significa login nuevo real)
+                if (!this.currentUser && session.user.email_confirmed_at) {
+                    console.log('👤 Nuevo inicio de sesión detectado (sin usuario previo)');
+                    await this.handleAuthSuccess(session.user, { isInitialSession: false });
+                } else if (!this.currentUser && !session.user.email_confirmed_at) {
                     this.showErrorMessage('Por favor confirma tu email antes de iniciar sesión');
                     await this.supabase.auth.signOut();
+                } else if (this.currentUser) {
+                    // Ya hay usuario, solo actualizar la referencia
+                    console.log('🔄 Sesión existente detectada (cambio de pestaña/foco)');
+                    this.currentUser = session.user;
                 }
             } else if (event === 'SIGNED_OUT') {
+                console.log('👋 Cierre de sesión detectado');
                 this.handleAuthLogout();
+            } else if (event === 'TOKEN_REFRESHED' && session?.user) {
+                // Solo actualizar usuario sin recargar toda la app
+                console.log('🔄 Token JWT refrescado automáticamente');
+                this.currentUser = session.user;
+            } else if (event === 'USER_UPDATED' && session?.user) {
+                console.log('👤 Usuario actualizado');
+                this.currentUser = session.user;
+            } else if (event === 'INITIAL_SESSION' && session?.user) {
+                // Evento especial que algunas versiones de Supabase emiten
+                console.log('ℹ️ Sesión inicial detectada por listener (ignorando, ya procesada)');
+                this.currentUser = session.user;
             }
         });
+        
+        console.log('✅ Sistema de autenticación inicializado');
     }
 
     // Mostrar modal de autenticación
@@ -178,7 +238,11 @@ class AuthManager {
     }
 
     // Manejar éxito de autenticación
-    async handleAuthSuccess(user) {
+    async handleAuthSuccess(user, options = {}) {
+        const { isInitialSession = false } = options;
+        
+        console.log('🎯 handleAuthSuccess llamado', { isInitialSession, email: user.email });
+        
         this.currentUser = user;
         this.hideAuthModal();
         
@@ -187,7 +251,7 @@ class AuthManager {
         
         // Si el perfil existe pero no tiene username, y los metadatos sí tienen username, actualizarlo
         if (profile && !profile.username && user.user_metadata?.username) {
-            console.log('Actualizando username del perfil desde metadatos...');
+            console.log('📝 Actualizando username del perfil desde metadatos...');
             try {
                 await this.supabase
                     .from('usuarios')
@@ -195,24 +259,33 @@ class AuthManager {
                     .eq('id', user.id);
                 console.log('✅ Username actualizado en el perfil');
             } catch (error) {
-                console.error('Error al actualizar username:', error);
+                console.error('❌ Error al actualizar username:', error);
             }
         }
         
         // Cargar información del usuario en la interfaz
         await this.loadUserProfile();
         
-        // Configurar escuchadores en tiempo real
-        if (window.dbManager) {
-            window.dbManager.setupRealtimeListeners();
+        // Solo inicializar Realtime y cargar datos la PRIMERA vez
+        // (no en cada refresh de token ni cambio de pestaña)
+        if (!this.appInitialized) {
+            console.log('🚀 Primera inicialización de la app');
+            
+            // Configurar escuchadores en tiempo real (solo una vez)
+            if (window.dbManager) {
+                window.dbManager.setupRealtimeListeners();
+            }
+            
+            // Cargar datos iniciales (solo una vez)
+            if (window.appManager) {
+                window.appManager.loadInitialData();
+            }
+            
+            this.appInitialized = true;
+            this.showSuccessMessage('¡Bienvenido a StudyHub!');
+        } else {
+            console.log('ℹ️ App ya inicializada, solo actualizando sesión');
         }
-        
-        // Cargar datos iniciales
-        if (window.appManager) {
-            window.appManager.loadInitialData();
-        }
-        
-        this.showSuccessMessage('¡Bienvenido a StudyHub!');
     }
 
     // Asegurar que el perfil del usuario existe (MÁS AGRESIVO)
@@ -253,13 +326,24 @@ class AuthManager {
 
     // Manejar cierre de sesión
     handleAuthLogout() {
+        console.log('👋 Procesando cierre de sesión...');
+        
         this.currentUser = null;
+        this.appInitialized = false; // Resetear para que vuelva a inicializar en próximo login
+        
+        // Limpiar listeners Realtime
+        if (window.dbManager) {
+            window.dbManager.cleanupRealtimeListeners();
+        }
+        
         this.showAuthModal();
         
         // Limpiar datos de la interfaz
         this.clearUserInterface();
         
         this.showSuccessMessage('Sesión cerrada correctamente');
+        
+        console.log('✅ Cierre de sesión completado');
     }
 
     // Crear o actualizar perfil de usuario (solo para usuarios verificados)

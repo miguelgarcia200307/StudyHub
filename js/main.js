@@ -7,15 +7,18 @@ class AppManager {
         this.currentSection = 'dashboard';
         this.isSidebarCollapsed = false;
         this.tasksManager = null;
+        this.isLoadingData = false;
         this.initializeApp();
     }
 
     // Inicializar la aplicación
     initializeApp() {
+        console.log('🚀 Inicializando AppManager...'); // Debug
         this.setupEventListeners();
         this.initializeTasksManager();
         this.setupTheme();
         this.checkAuthState();
+        console.log('✅ AppManager inicializado'); // Debug
     }
 
     // Inicializar gestor de tareas
@@ -26,18 +29,31 @@ class AppManager {
 
     // Verificar estado de autenticación
     async checkAuthState() {
-        // Esperar a que AuthManager se inicialice
-        setTimeout(() => {
-            if (window.authManager && window.authManager.isAuthenticated()) {
-                this.loadInitialData();
+        console.log('🔍 Verificando estado de autenticación...');
+        
+        // Esperar a que AuthManager complete su inicialización
+        if (window.authManager && typeof window.authManager.waitForAuthReady === 'function') {
+            await window.authManager.waitForAuthReady();
+            
+            // AuthManager ya se encarga de llamar loadInitialData() si hay usuario autenticado
+            // Solo necesitamos verificar si NO hay usuario para mostrar algo
+            if (!window.authManager.isAuthenticated()) {
+                console.log('ℹ️ Usuario no autenticado');
+            } else {
+                console.log('✅ Usuario autenticado detectado');
             }
-        }, 1000);
+        } else {
+            console.warn('⚠️ AuthManager no disponible o método waitForAuthReady no existe');
+        }
     }
 
     // Configurar event listeners
     setupEventListeners() {
+        console.log('🔧 Configurando event listeners...'); // Debug
+        
         // Navegación del sidebar
         const navLinks = document.querySelectorAll('.nav-link');
+        console.log('Nav links encontrados:', navLinks.length); // Debug
         navLinks.forEach(link => {
             link.addEventListener('click', (e) => {
                 e.preventDefault();
@@ -53,14 +69,21 @@ class AppManager {
         const sidebarToggle = document.getElementById('sidebar-toggle');
         const mobileMenuToggle = document.getElementById('mobile-menu-toggle');
         
+        console.log('Sidebar toggle element:', sidebarToggle); // Debug
+        console.log('Mobile menu toggle element:', mobileMenuToggle); // Debug
+        
         if (sidebarToggle) {
-            sidebarToggle.addEventListener('click', () => {
+            sidebarToggle.addEventListener('click', (e) => {
+                console.log('Sidebar toggle clicked'); // Debug
+                e.preventDefault();
                 this.toggleSidebar();
             });
         }
         
         if (mobileMenuToggle) {
-            mobileMenuToggle.addEventListener('click', () => {
+            mobileMenuToggle.addEventListener('click', (e) => {
+                console.log('Mobile menu toggle clicked'); // Debug
+                e.preventDefault();
                 this.toggleSidebar();
             });
         }
@@ -79,10 +102,11 @@ class AppManager {
             const mobileToggle = document.getElementById('mobile-menu-toggle');
             
             if (window.innerWidth <= 768 && 
+                sidebar &&
                 !sidebar.contains(e.target) && 
-                !mobileToggle.contains(e.target) &&
-                sidebar.classList.contains('active')) {
-                this.toggleSidebar();
+                !mobileToggle?.contains(e.target) &&
+                sidebar.classList.contains('mobile-open')) {
+                this.closeSidebar();
             }
         });
 
@@ -552,24 +576,88 @@ class AppManager {
 
     // Toggle del sidebar
     toggleSidebar() {
+        console.log('Toggle sidebar called'); // Debug
         const sidebar = document.getElementById('sidebar');
+        const overlay = this.getOrCreateSidebarOverlay();
+        
+        console.log('Sidebar element:', sidebar); // Debug
+        console.log('Window width:', window.innerWidth); // Debug
+        
         if (sidebar) {
-            sidebar.classList.toggle('active');
+            if (window.innerWidth <= 768) {
+                // Móvil: toggle con overlay
+                const isOpen = sidebar.classList.contains('mobile-open');
+                console.log('Mobile - isOpen:', isOpen); // Debug
+                
+                if (isOpen) {
+                    sidebar.classList.remove('mobile-open');
+                    overlay.classList.remove('active');
+                    document.body.style.overflow = '';
+                } else {
+                    sidebar.classList.add('mobile-open');
+                    overlay.classList.add('active');
+                    document.body.style.overflow = 'hidden';
+                }
+                
+                console.log('Sidebar classes after toggle:', sidebar.className); // Debug
+                console.log('Overlay classes after toggle:', overlay.className); // Debug
+            } else {
+                // Desktop: solo toggle
+                sidebar.classList.toggle('active');
+            }
+        } else {
+            console.error('Sidebar element not found!'); // Debug
         }
     }
 
     // Cerrar sidebar
     closeSidebar() {
         const sidebar = document.getElementById('sidebar');
+        const overlay = document.querySelector('.sidebar-overlay');
+        
         if (sidebar) {
-            sidebar.classList.remove('active');
+            sidebar.classList.remove('active', 'mobile-open');
+            if (overlay) {
+                overlay.classList.remove('active');
+            }
+            document.body.style.overflow = '';
         }
+    }
+
+    // Obtener o crear overlay del sidebar
+    getOrCreateSidebarOverlay() {
+        let overlay = document.querySelector('.sidebar-overlay');
+        
+        if (!overlay) {
+            overlay = document.createElement('div');
+            overlay.className = 'sidebar-overlay';
+            overlay.addEventListener('click', () => {
+                console.log('Overlay clicked - closing sidebar'); // Debug
+                this.closeSidebar();
+            });
+            document.body.appendChild(overlay);
+            console.log('Overlay created and added to body'); // Debug
+        }
+        
+        return overlay;
     }
 
     // Manejar redimensionamiento
     handleResize() {
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.querySelector('.sidebar-overlay');
+        
         if (window.innerWidth > 768) {
-            const sidebar = document.getElementById('sidebar');
+            // Desktop: limpiar estados móviles
+            if (sidebar) {
+                sidebar.classList.remove('mobile-open');
+            }
+            if (overlay) {
+                overlay.classList.remove('active');
+            }
+            document.body.style.overflow = '';
+        } else {
+            // Móvil: limpiar estados desktop
             if (sidebar) {
                 sidebar.classList.remove('active');
             }
@@ -608,6 +696,15 @@ class AppManager {
 
     // Cargar datos iniciales
     async loadInitialData() {
+        // Prevenir múltiples cargas simultáneas
+        if (this.isLoadingData) {
+            console.log('ℹ️ Ya se están cargando datos, omitiendo...');
+            return;
+        }
+        
+        this.isLoadingData = true;
+        console.log('📊 Cargando datos iniciales...');
+        
         try {
             // Cargar datos básicos en paralelo
             await Promise.all([
@@ -618,11 +715,15 @@ class AppManager {
                 this.tasksManager ? this.tasksManager.loadTasks() : Promise.resolve()
             ]);
 
+            console.log('✅ Datos iniciales cargados correctamente');
+            
             // Ocultar pantalla de carga
             this.hideLoadingScreen();
         } catch (error) {
-            console.error('Error al cargar datos iniciales:', error);
+            console.error('❌ Error al cargar datos iniciales:', error);
             this.hideLoadingScreen();
+        } finally {
+            this.isLoadingData = false;
         }
     }
 

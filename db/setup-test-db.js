@@ -9,8 +9,9 @@ const TEST_SUPABASE_URL = 'https://qhezrpkjkwbprkaeujbq.supabase.co';
 const TEST_SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFoZXpycGtqa3dicHJrYWV1amJxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUyNzgzMDQsImV4cCI6MjA3MDg1NDMwNH0.4i8zPvE0YYRqpWL-mv0yT3tclJJxC0Ec8OzkCno4L-Q';
 
 // Verificar que Supabase esté disponible
-if (typeof window !== 'undefined' && window.supabase) {
-    const testClient = window.supabase.createClient(TEST_SUPABASE_URL, TEST_SUPABASE_ANON_KEY);
+if (typeof window !== 'undefined' && window.supabaseClient) {
+    // Usar el cliente global en lugar de crear uno nuevo
+    const testClient = window.supabaseClient;
     
     console.log('✅ Cliente de Supabase creado exitosamente');
     console.log('🌐 URL:', TEST_SUPABASE_URL);

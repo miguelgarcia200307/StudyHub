@@ -6,11 +6,19 @@ class NotesManager {
     constructor() {
         this.currentNote = null;
         this.searchTimeout = null;
+        this.eventsInitialized = false;
         this.setupEventListeners();
     }
 
     // Configurar event listeners
     setupEventListeners() {
+        // Prevenir inicialización duplicada de eventos
+        if (this.eventsInitialized) {
+            console.warn('⚠️ setupEventListeners ya fue ejecutado, saltando inicialización duplicada');
+            return;
+        }
+        this.eventsInitialized = true;
+        
         // Botón para agregar nota
         const addNoteBtn = document.getElementById('add-note-btn');
         if (addNoteBtn) {
@@ -20,7 +28,7 @@ class NotesManager {
         }
 
         // Formulario de nota
-        const noteForm = document.getElementById('note-form');
+        const noteForm = document.getElementById('enhanced-note-form');
         if (noteForm) {
             noteForm.addEventListener('submit', (e) => {
                 e.preventDefault();
@@ -75,19 +83,19 @@ class NotesManager {
         if (note) {
             // Editar nota existente
             this.currentNote = note;
-            document.getElementById('note-title').value = note.titulo;
-            document.getElementById('note-content').value = note.contenido;
-            document.getElementById('note-subject').value = note.asignatura_id || '';
-            document.getElementById('note-modal-title').textContent = 'Editar Nota';
+            document.getElementById('enhanced-note-title').value = note.titulo;
+            document.getElementById('enhanced-note-content').value = note.contenido;
+            document.getElementById('enhanced-note-subject').value = note.asignatura_id || '';
+            document.getElementById('enhanced-note-modal-title').textContent = 'Editar Nota';
         } else {
             // Nueva nota
             this.currentNote = null;
-            document.getElementById('note-form').reset();
-            document.getElementById('note-modal-title').textContent = 'Nueva Nota';
+            document.getElementById('enhanced-note-form').reset();
+            document.getElementById('enhanced-note-modal-title').textContent = 'Nueva Nota';
         }
         
         // Mostrar modal
-        const modal = document.getElementById('note-modal');
+        const modal = document.getElementById('enhanced-note-modal');
         modal.classList.add('active');
     }
 
@@ -96,7 +104,7 @@ class NotesManager {
         if (!window.dbManager) return;
         
         const subjects = await window.dbManager.loadSubjects();
-        const subjectSelect = document.getElementById('note-subject');
+        const subjectSelect = document.getElementById('enhanced-note-subject');
         
         if (subjectSelect) {
             // Limpiar opciones existentes (excepto la primera)
@@ -116,19 +124,29 @@ class NotesManager {
 
     // Manejar envío del formulario de nota
     async handleNoteSubmit() {
-        const title = document.getElementById('note-title').value;
-        const content = document.getElementById('note-content').value;
-        const subjectId = document.getElementById('note-subject').value;
+        const title = document.getElementById('enhanced-note-title').value;
+        const content = document.getElementById('enhanced-note-content').value;
+        const subjectId = document.getElementById('enhanced-note-subject').value;
+        const color = document.getElementById('enhanced-note-color')?.value;
+        const tagsInput = document.getElementById('enhanced-note-tags')?.value;
+        const pinned = document.getElementById('enhanced-note-pinned')?.checked;
         
         if (!title.trim() || !content.trim()) {
             window.authManager.showErrorMessage('Por favor completa el título y contenido');
             return;
         }
         
+        const etiquetas = tagsInput
+            ? tagsInput.split(',').map(t => t.trim()).filter(t => t.length > 0)
+            : [];
+        
         const noteData = {
             titulo: title.trim(),
             contenido: content.trim(),
-            asignatura_id: subjectId || null
+            asignatura_id: subjectId || null,
+            color_etiqueta: color || null,
+            etiquetas,
+            fijada: pinned || false
         };
         
         let result;
@@ -141,27 +159,333 @@ class NotesManager {
             result = await window.dbManager.createNote(noteData);
         }
         
-        if (result.success) {
-            this.closeNoteModal();
-            await this.loadNotes();
-            window.authManager.showSuccessMessage(
-                this.currentNote ? 'Nota actualizada correctamente' : 'Nota creada correctamente'
-            );
-        } else {
-            window.authManager.showErrorMessage(result.error);
+        if (!result.success) {
+            window.authManager.showErrorMessage(result.error || 'Error al guardar la nota');
+            return;
         }
+        
+        const notaGuardada = result.data;
+        const notaId = notaGuardada.id;
+        
+        // 🔹 NUEVO: procesar archivos pendientes
+        if (this.pendingFiles && this.pendingFiles.length > 0 && 
+            typeof this.savePendingAttachments === 'function') {
+            await this.savePendingAttachments(notaId);
+        }
+        
+        // Cerrar modal, recargar notas y mostrar mensaje
+        this.closeNoteModal();
+        await this.loadNotes();
+        window.authManager.showSuccessMessage(
+            this.currentNote ? 'Nota actualizada correctamente' : 'Nota creada correctamente'
+        );
     }
 
     // Cerrar modal de nota
     closeNoteModal() {
-        const modal = document.getElementById('note-modal');
+        const modal = document.getElementById('enhanced-note-modal');
         modal.classList.remove('active');
         
         // Limpiar formulario
-        document.getElementById('note-form').reset();
-        document.getElementById('note-modal-title').textContent = 'Nueva Nota';
+        document.getElementById('enhanced-note-form').reset();
+        document.getElementById('enhanced-note-modal-title').textContent = 'Nueva Nota';
         this.currentNote = null;
     }
+
+    // ==========================================
+    // FUNCIONES PARA VISTA PREVIA
+    // ==========================================
+
+    // Abrir modal de vista previa de nota
+    async openPreviewModal(notaId) {
+        if (!window.dbManager || !notaId) {
+            console.error('❌ No se puede abrir vista previa: dbManager no disponible o ID inválido');
+            return;
+        }
+
+        try {
+            console.log('📄 Abriendo vista previa para nota ID:', notaId);
+
+            // Cargar datos de la nota desde Supabase
+            const result = await window.dbManager.getNoteById(notaId);
+            
+            if (!result.success || !result.data) {
+                window.authManager.showErrorMessage('No se pudo cargar la nota');
+                return;
+            }
+
+            const nota = result.data;
+            console.log('✅ Nota cargada:', nota);
+
+            // Almacenar referencia para editar luego si es necesario
+            this.currentPreviewNote = nota;
+
+            // Renderizar título
+            const titleElement = document.getElementById('preview-note-title');
+            if (titleElement) {
+                titleElement.textContent = nota.titulo || 'Sin título';
+            }
+
+            // Renderizar fecha
+            const dateElement = document.getElementById('preview-note-date');
+            if (dateElement) {
+                const fecha = nota.fecha_actualizacion || nota.fecha_creacion;
+                const fechaFormateada = new Date(fecha).toLocaleDateString('es-ES', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+                dateElement.innerHTML = `<i class="fas fa-calendar"></i> ${fechaFormateada}`;
+            }
+
+            // Renderizar asignatura (si existe)
+            const subjectElement = document.getElementById('preview-note-subject');
+            if (subjectElement) {
+                if (nota.asignaturas && nota.asignaturas.nombre) {
+                    const color = nota.asignaturas.color || '#95a5a6';
+                    subjectElement.innerHTML = `
+                        <span class="note-subject-badge" style="background-color: ${color};">
+                            <i class="fas fa-book"></i> ${this.escapeHtml(nota.asignaturas.nombre)}
+                        </span>
+                    `;
+                    subjectElement.style.display = 'inline-block';
+                } else {
+                    subjectElement.style.display = 'none';
+                }
+            }
+
+            // Renderizar contenido (como HTML para soportar formato)
+            const contentElement = document.getElementById('preview-note-content');
+            if (contentElement) {
+                // Convertir saltos de línea a <br> para preservar formato
+                const contenidoFormateado = (nota.contenido || 'Sin contenido')
+                    .replace(/\n/g, '<br>');
+                contentElement.innerHTML = contenidoFormateado;
+            }
+
+            // Cargar y renderizar archivos adjuntos
+            await this.loadPreviewAttachments(notaId);
+
+            // Mostrar el modal
+            const modal = document.getElementById('modal-preview-note');
+            if (modal) {
+                modal.classList.add('active');
+                console.log('✅ Modal de vista previa abierto');
+            }
+
+        } catch (error) {
+            console.error('❌ Error al abrir vista previa:', error);
+            window.authManager.showErrorMessage('Error al cargar la vista previa de la nota');
+        }
+    }
+
+    // Cargar archivos adjuntos para vista previa
+    async loadPreviewAttachments(notaId) {
+        try {
+            const attachmentsSection = document.getElementById('preview-attachments-section');
+            const attachmentsList = document.getElementById('preview-attachments-list');
+            const attachmentsCount = document.getElementById('preview-attachments-count');
+
+            if (!attachmentsList) return;
+
+            // Obtener adjuntos desde Supabase
+            const result = await window.dbManager.getAttachmentsByNoteId(notaId);
+            
+            if (!result.success) {
+                console.warn('No se pudieron cargar adjuntos:', result.error);
+                if (attachmentsSection) {
+                    attachmentsSection.style.display = 'none';
+                }
+                return;
+            }
+
+            const adjuntos = result.data || [];
+            console.log(`📎 Adjuntos encontrados: ${adjuntos.length}`);
+
+            if (adjuntos.length === 0) {
+                if (attachmentsSection) {
+                    attachmentsSection.style.display = 'none';
+                }
+                return;
+            }
+
+            // Mostrar sección de adjuntos
+            if (attachmentsSection) {
+                attachmentsSection.style.display = 'block';
+            }
+            if (attachmentsCount) {
+                attachmentsCount.textContent = adjuntos.length;
+            }
+
+            // Renderizar cada adjunto (ahora es async)
+            attachmentsList.innerHTML = '<div class="loading-attachments">Cargando adjuntos...</div>';
+            
+            const renderedAttachments = await Promise.all(
+                adjuntos.map(adjunto => this.renderPreviewAttachment(adjunto))
+            );
+            
+            attachmentsList.innerHTML = renderedAttachments.join('');
+
+        } catch (error) {
+            console.error('❌ Error al cargar adjuntos para vista previa:', error);
+        }
+    }
+
+    // Renderizar un archivo adjunto en vista previa
+    async renderPreviewAttachment(adjunto) {
+        const fileName = adjunto.nombre_archivo || 'Archivo sin nombre';
+        const fileUrl = adjunto.archivo_url || '#';  // ✅ Ruta del storage
+        const fileType = adjunto.content_type || adjunto.tipo_archivo || '';  // ✅ Usar content_type primero
+        const fileSize = adjunto.tamano_bytes 
+            ? this.formatFileSize(adjunto.tamano_bytes) 
+            : '';
+
+        // Si es imagen, obtener URL firmada para mostrar miniatura
+        if (fileType.startsWith('image/')) {
+            // Generar URL firmada para la imagen
+            const urlResult = await window.dbManager.getAttachmentDownloadUrl(fileUrl);
+            const signedUrl = urlResult.success ? urlResult.url : fileUrl;
+
+            return `
+                <div class="preview-attachment-image">
+                    <img src="${signedUrl}" 
+                         alt="${this.escapeHtml(fileName)}" 
+                         class="note-preview-image"
+                         onclick="window.open('${signedUrl}', '_blank')">
+                    <div class="preview-image-info">
+                        <span class="preview-image-name">${this.escapeHtml(fileName)}</span>
+                        ${fileSize ? `<span class="preview-image-size">${fileSize}</span>` : ''}
+                        <button class="btn btn-sm btn-outline" 
+                                onclick="event.stopPropagation(); window.notesManager.downloadFile('${fileUrl}', '${this.escapeHtml(fileName)}')">
+                            <i class="fas fa-download"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Si es PDF u otro archivo
+        const icon = fileType.includes('pdf') 
+            ? 'fa-file-pdf' 
+            : 'fa-file';
+
+        return `
+            <div class="note-file-row preview-file-row">
+                <i class="fas ${icon} file-icon"></i>
+                <div class="file-info">
+                    <span class="file-name">${this.escapeHtml(fileName)}</span>
+                    ${fileSize ? `<span class="file-size">${fileSize}</span>` : ''}
+                </div>
+                <button class="btn btn-sm btn-outline btn-descargar" 
+                        onclick="window.notesManager.downloadFile('${fileUrl}', '${this.escapeHtml(fileName)}')">
+                    <i class="fas fa-download"></i>
+                    Descargar
+                </button>
+            </div>
+        `;
+    }
+
+    // Formatear tamaño de archivo
+    formatFileSize(bytes) {
+        if (!bytes) return '';
+        
+        const units = ['B', 'KB', 'MB', 'GB'];
+        let size = bytes;
+        let unitIndex = 0;
+        
+        while (size >= 1024 && unitIndex < units.length - 1) {
+            size /= 1024;
+            unitIndex++;
+        }
+        
+        return `${size.toFixed(1)} ${units[unitIndex]}`;
+    }
+
+    // Descargar archivo usando el método correcto de Supabase
+    async downloadFile(archivoUrl, filename) {
+        try {
+            console.log('📥 Descargando archivo desde vista previa:', { archivoUrl, filename });
+
+            if (!window.dbManager || typeof window.dbManager.downloadAttachment !== 'function') {
+                throw new Error('Sistema de descarga no disponible');
+            }
+
+            // Usar el método downloadAttachment que obtiene el blob real
+            const result = await window.dbManager.downloadAttachment(archivoUrl);
+
+            if (result.success && result.blob) {
+                console.log('✅ Blob recibido:', {
+                    tipo: result.blob.type,
+                    tamaño: result.blob.size,
+                    nombre: filename
+                });
+
+                // Crear ObjectURL del blob
+                const blobUrl = window.URL.createObjectURL(result.blob);
+                
+                // Crear enlace temporal y forzar descarga
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = blobUrl;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                
+                // Liberar el ObjectURL después de un tiempo
+                setTimeout(() => window.URL.revokeObjectURL(blobUrl), 1000);
+                
+                console.log('✅ Descarga iniciada correctamente');
+                
+                // Mostrar mensaje de éxito
+                if (window.authManager && window.authManager.showSuccessMessage) {
+                    window.authManager.showSuccessMessage('Archivo descargado correctamente');
+                }
+            } else {
+                throw new Error(result.error || 'No se pudo descargar el archivo');
+            }
+        } catch (error) {
+            console.error('❌ Error al descargar archivo:', error);
+            
+            if (window.authManager && window.authManager.showErrorMessage) {
+                window.authManager.showErrorMessage(
+                    error.message || 'Error al descargar el archivo'
+                );
+            }
+        }
+    }
+
+    // Cerrar modal de vista previa
+    closePreviewModal() {
+        const modal = document.getElementById('modal-preview-note');
+        if (modal) {
+            modal.classList.remove('active');
+        }
+        this.currentPreviewNote = null;
+        console.log('✅ Modal de vista previa cerrado');
+    }
+
+    // Editar desde vista previa (abre el modal de edición)
+    async editFromPreview() {
+        if (!this.currentPreviewNote) {
+            console.error('❌ No hay nota en vista previa para editar');
+            return;
+        }
+
+        // Cerrar vista previa
+        this.closePreviewModal();
+
+        // Abrir modal de edición
+        await this.showNoteModal(this.currentPreviewNote);
+        
+        console.log('✅ Cambiado a modo edición');
+    }
+
+    // ==========================================
+    // FIN FUNCIONES VISTA PREVIA
+    // ==========================================
 
     // Cargar notas desde la base de datos
     async loadNotes(searchTerm = '') {
@@ -177,7 +501,7 @@ class NotesManager {
 
     // Renderizar notas en la interfaz
     renderNotes(notes) {
-        const notesGrid = document.getElementById('notes-grid');
+        const notesGrid = document.getElementById('notes-container');
         if (!notesGrid) return;
         
         if (notes.length === 0) {
@@ -206,7 +530,7 @@ class NotesManager {
         const subjectColor = note.asignaturas ? note.asignaturas.color : '#95a5a6';
         
         return `
-            <div class="card note-card" onclick="window.notesManager.showNoteModal(${JSON.stringify(note).replace(/"/g, '&quot;')})">
+            <div class="card note-card note-clickable" onclick="window.notesManager.openPreviewModal('${note.id}')">
                 ${subjectName ? `<div class="note-subject-bar" style="background-color: ${subjectColor}"></div>` : ''}
                 <div class="note-content">
                     <h3 class="note-title">${this.escapeHtml(note.titulo)}</h3>
@@ -359,6 +683,27 @@ class NotesManager {
         return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     }
 
+    // Limpiar todos los filtros
+    clearFilters() {
+        // Limpiar búsqueda
+        const searchInput = document.getElementById('notes-search');
+        if (searchInput) searchInput.value = '';
+        
+        // Limpiar filtro de asignatura
+        const subjectFilter = document.getElementById('notes-subject-filter');
+        if (subjectFilter) subjectFilter.value = '';
+        
+        // Limpiar checkboxes
+        const pinnedFilter = document.getElementById('notes-pinned-filter');
+        if (pinnedFilter) pinnedFilter.checked = false;
+        
+        const attachmentsFilter = document.getElementById('notes-attachments-filter');
+        if (attachmentsFilter) attachmentsFilter.checked = false;
+        
+        // Recargar notas sin filtros
+        this.loadNotes();
+    }
+
     // Configurar atajos de teclado
     setupKeyboardShortcuts() {
         document.addEventListener('keydown', (e) => {
@@ -371,7 +716,7 @@ class NotesManager {
             
             // Escape para cerrar modal
             if (e.key === 'Escape') {
-                const modal = document.getElementById('note-modal');
+                const modal = document.getElementById('enhanced-note-modal');
                 if (modal.classList.contains('active')) {
                     this.closeNoteModal();
                 }
@@ -382,8 +727,8 @@ class NotesManager {
     // Configurar auto-guardado
     setupAutoSave() {
         let autoSaveTimeout;
-        const titleInput = document.getElementById('note-title');
-        const contentInput = document.getElementById('note-content');
+        const titleInput = document.getElementById('enhanced-note-title');
+        const contentInput = document.getElementById('enhanced-note-content');
         
         const autoSave = () => {
             clearTimeout(autoSaveTimeout);
@@ -488,6 +833,9 @@ if (!document.querySelector('#notes-styles')) {
 document.addEventListener('DOMContentLoaded', function() {
     // Crear instancia global del gestor de notas
     window.notesManager = new NotesManager();
+    
+    // NO volver a llamar setupEventListeners aquí (ya se ejecuta en el constructor)
+    // window.notesManager.setupEventListeners();
     
     // Configurar atajos de teclado y auto-guardado
     window.notesManager.setupKeyboardShortcuts();

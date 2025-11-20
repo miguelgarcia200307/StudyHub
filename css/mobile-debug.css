@@ -1,0 +1,39 @@
+/* =================================================================
+   ESTILOS DE DEBUG TEMPORAL PARA MÓVIL
+================================================================= */
+
+/* Debug del botón hamburguesa - muy visible */
+.mobile-menu-toggle {
+    background: red !important;
+    border: 3px solid yellow !important;
+    color: white !important;
+    font-size: 20px !important;
+    font-weight: bold !important;
+}
+
+.mobile-menu-toggle::before {
+    content: 'CLICK ME' !important;
+    position: absolute !important;
+    top: -25px !important;
+    left: 0 !important;
+    font-size: 12px !important;
+    color: red !important;
+    background: white !important;
+    padding: 2px !important;
+    border: 1px solid red !important;
+}
+
+/* Debug del sidebar cuando está abierto */
+.sidebar.mobile-open {
+    background: lime !important;
+    transform: translateX(0) !important;
+    z-index: 1000 !important;
+}
+
+/* Debug del overlay cuando está activo */
+.sidebar-overlay.active {
+    background: rgba(255, 0, 0, 0.8) !important;
+    z-index: 999 !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+}

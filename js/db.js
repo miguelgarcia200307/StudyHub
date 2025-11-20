@@ -20,10 +20,19 @@ if (SUPABASE_URL === 'TU_SUPABASE_URL_AQUI' || SUPABASE_ANON_KEY === 'TU_SUPABAS
     console.log('📡 Conectando a:', SUPABASE_URL);
 }
 
-// Inicializar cliente de Supabase
+// Inicializar cliente de Supabase con opciones de autenticación completas
 let supabase;
 try {
-    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+        auth: {
+            persistSession: true,
+            autoRefreshToken: true,
+            detectSessionInUrl: true
+        }
+    });
+    // Exportar globalmente para uso en otros módulos
+    window.supabaseClient = supabase;
+    console.log('✅ Cliente Supabase único inicializado con JWT configurado');
 } catch (error) {
     console.error('Error al inicializar Supabase:', error);
 }
@@ -36,21 +45,36 @@ class DatabaseManager {
     constructor() {
         this.supabase = supabase;
         this.currentUser = null;
+        this.realtimeInitialized = false;
+        this.eventChannel = null;
+        this.tareasChannel = null;
+        this.notasChannel = null;
     }
 
-    // Configurar escuchadores en tiempo real
+    // Configurar escuchadores en tiempo real (previene duplicación)
     setupRealtimeListeners() {
-        if (!this.supabase) return;
+        if (!this.supabase) {
+            console.warn('⚠️ Supabase no disponible, no se pueden configurar listeners Realtime');
+            return;
+        }
+        
+        if (this.realtimeInitialized) {
+            console.log('ℹ️ Listeners Realtime ya inicializados, omitiendo...');
+            return;
+        }
+        
+        console.log('🔌 Configurando listeners Realtime...');
+        this.realtimeInitialized = true;
 
         // Escuchar cambios en eventos
-        this.supabase
+        this.eventChannel = this.supabase
             .channel('eventos_channel')
             .on('postgres_changes', {
                 event: '*',
                 schema: 'public',
                 table: 'eventos'
             }, (payload) => {
-                console.log('Cambio en eventos:', payload);
+                console.log('🔔 Cambio en eventos:', payload.eventType);
                 if (window.calendarManager) {
                     window.calendarManager.loadEvents();
                 }
@@ -58,36 +82,70 @@ class DatabaseManager {
             .subscribe();
 
         // Escuchar cambios en tareas
-        this.supabase
+        this.tareasChannel = this.supabase
             .channel('tareas_channel')
             .on('postgres_changes', {
                 event: '*',
                 schema: 'public',
                 table: 'tareas'
             }, (payload) => {
-                console.log('Cambio en tareas:', payload);
+                console.log('🔔 Cambio en tareas:', payload.eventType);
                 // Actualizar vista de tareas si está activa
-                if (document.getElementById('tasks-section').classList.contains('active')) {
+                if (document.getElementById('tasks-section')?.classList.contains('active')) {
                     this.loadTasks();
                 }
             })
             .subscribe();
 
         // Escuchar cambios en notas
-        this.supabase
+        this.notasChannel = this.supabase
             .channel('notas_channel')
             .on('postgres_changes', {
                 event: '*',
                 schema: 'public',
                 table: 'notas'
             }, (payload) => {
-                console.log('Cambio en notas:', payload);
+                console.log('🔔 Cambio en notas:', payload.eventType);
                 // Actualizar vista de notas si está activa
-                if (document.getElementById('notes-section').classList.contains('active')) {
+                if (document.getElementById('notes-section')?.classList.contains('active')) {
                     this.loadNotes();
                 }
             })
             .subscribe();
+            
+        console.log('✅ Listeners Realtime configurados correctamente');
+    }
+    
+    // Limpiar listeners en tiempo real (llamar al cerrar sesión)
+    cleanupRealtimeListeners() {
+        if (!this.realtimeInitialized) return;
+        
+        console.log('🧹 Limpiando listeners Realtime...');
+        
+        try {
+            if (this.eventChannel) {
+                this.supabase.removeChannel(this.eventChannel);
+                this.eventChannel = null;
+            }
+            if (this.tareasChannel) {
+                this.supabase.removeChannel(this.tareasChannel);
+                this.tareasChannel = null;
+            }
+            if (this.notasChannel) {
+                this.supabase.removeChannel(this.notasChannel);
+                this.notasChannel = null;
+            }
+            
+            this.realtimeInitialized = false;
+            console.log('✅ Listeners Realtime limpiados correctamente');
+        } catch (error) {
+            console.warn('⚠️ Error al limpiar canales Realtime:', error);
+            // Forzar reset de banderas incluso si hay error
+            this.realtimeInitialized = false;
+            this.eventChannel = null;
+            this.tareasChannel = null;
+            this.notasChannel = null;
+        }
     }
 
     // =================================================================
@@ -558,6 +616,47 @@ class DatabaseManager {
         } catch (error) {
             console.error('Error al eliminar nota:', error);
             return { success: false, error: error.message };
+        }
+    }
+
+    // Obtener una nota por ID (para vista previa)
+    async getNoteById(noteId) {
+        if (!this.supabase) return { success: false, error: 'Supabase no configurado' };
+
+        try {
+            const { data, error } = await this.supabase
+                .from('notas')
+                .select(`
+                    *,
+                    asignaturas(id, nombre, color)
+                `)
+                .eq('id', noteId)
+                .single();
+
+            if (error) throw error;
+            return { success: true, data };
+        } catch (error) {
+            console.error('Error al obtener nota por ID:', error);
+            return { success: false, error: error.message };
+        }
+    }
+
+    // Obtener adjuntos de una nota (para vista previa)
+    async getAttachmentsByNoteId(noteId) {
+        if (!this.supabase) return { success: false, error: 'Supabase no configurado' };
+
+        try {
+            const { data, error } = await this.supabase
+                .from('nota_adjuntos')
+                .select('*')
+                .eq('nota_id', noteId)
+                .order('fecha_subida', { ascending: true });
+
+            if (error) throw error;
+            return { success: true, data: data || [] };
+        } catch (error) {
+            console.error('Error al obtener adjuntos de nota:', error);
+            return { success: false, error: error.message, data: [] };
         }
     }
 
@@ -2193,7 +2292,561 @@ class DatabaseManager {
             console.error('❌ Error en test de colaboración:', error);
         }
     }
+
+    // =================================================================
+    // MÉTODOS PARA ARCHIVOS ADJUNTOS EN NOTAS
+    // =================================================================
+
+    /**
+     * Diagnosticar configuración de almacenamiento
+     */
+    async diagnoseStorageSetup() {
+        try {
+            console.log('🔍 Diagnosticando configuración de almacenamiento...');
+            
+            // Verificar conexión
+            const user = await this.getCurrentUser();
+            console.log('👤 Usuario actual:', user ? user.email : 'No autenticado');
+            
+            // Listar buckets
+            const { data: buckets, error: bucketsError } = await this.supabase.storage.listBuckets();
+            if (bucketsError) {
+                console.error('❌ Error al listar buckets:', bucketsError);
+                return { success: false, error: 'No se puede acceder al almacenamiento' };
+            }
+            
+            console.log('🗂️ Buckets disponibles:', buckets.map(b => ({ name: b.name, public: b.public })));
+            
+            // Verificar bucket notes_attachments
+            const notesBucket = buckets.find(bucket => bucket.name === 'notes_attachments');
+            if (!notesBucket) {
+                console.warn('⚠️ Bucket notes_attachments no encontrado');
+                return { success: false, error: 'Bucket notes_attachments no existe' };
+            }
+            
+            console.log('✅ Bucket notes_attachments encontrado:', notesBucket);
+            
+            // Intentar listar archivos en el bucket
+            const { data: files, error: listError } = await this.supabase.storage
+                .from('notes_attachments')
+                .list('');
+                
+            if (listError) {
+                console.error('❌ Error al listar archivos:', listError);
+                return { success: false, error: 'No se pueden listar archivos en el bucket' };
+            }
+            
+            console.log('📁 Archivos en bucket:', files?.length || 0);
+            
+            return { 
+                success: true, 
+                data: {
+                    user: user?.email,
+                    bucketsCount: buckets.length,
+                    notesBucketExists: true,
+                    filesCount: files?.length || 0
+                }
+            };
+            
+        } catch (error) {
+            console.error('❌ Error en diagnóstico:', error);
+            return { success: false, error: error.message };
+        }
+    }
+
+    /**
+     * Subir archivo adjunto para una nota
+     * @param {string} notaId - ID de la nota
+     * @param {File} archivo - Archivo a subir (PDF o imagen)
+     * @returns {Object} - Resultado con URL del archivo o error
+     */
+    async uploadNoteAttachment(notaId, archivo) {
+        try {
+            const user = await this.getCurrentUser();
+            if (!user) throw new Error('Usuario no autenticado');
+
+            // Validar tipo de archivo
+            const tiposPermitidos = ['application/pdf', 'image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+            if (!tiposPermitidos.includes(archivo.type)) {
+                throw new Error('Tipo de archivo no permitido. Solo PDFs e imágenes.');
+            }
+
+            // Validar tamaño (máximo 50MB)
+            const maxSize = 50 * 1024 * 1024; // 50MB en bytes
+            if (archivo.size > maxSize) {
+                throw new Error('El archivo es demasiado grande. Máximo 50MB permitido.');
+            }
+
+            // Verificar que el usuario pueda modificar la nota
+            const { data: nota, error: notaError } = await this.supabase
+                .from('notas')
+                .select('autor_id')
+                .eq('id', notaId)
+                .single();
+
+            if (notaError) throw new Error('No se pudo verificar la nota');
+            if (nota.autor_id !== user.id) {
+                throw new Error('No tienes permisos para agregar adjuntos a esta nota');
+            }
+
+            // OMITIMOS LA VERIFICACIÓN DE BUCKETS (RLS puede ocultarlos)
+            // Asumimos que el bucket 'notes_attachments' existe porque el usuario ya lo creó.
+            
+            /* 
+            const { data: buckets, error: bucketsError } = await this.supabase.storage.listBuckets();
+            // ... código de verificación eliminado para evitar falsos negativos ...
+            */
+
+            // Generar nombre único para el archivo
+            const timestamp = new Date().getTime();
+            const extension = archivo.name.split('.').pop();
+            const nombreArchivo = `${timestamp}-${Math.random().toString(36).substr(2, 9)}.${extension}`;
+            const rutaArchivo = `nota_${user.id}/${notaId}/${nombreArchivo}`;
+
+            // Subir archivo a Supabase Storage
+            console.log('📤 Intentando subir archivo:', {
+                nombre: archivo.name,
+                tipo: archivo.type,
+                tamaño: archivo.size,
+                ruta: rutaArchivo
+            });
+
+            const { data: uploadData, error: uploadError } = await this.supabase.storage
+                .from('notes_attachments')
+                .upload(rutaArchivo, archivo, {
+                    cacheControl: '3600',
+                    upsert: false,
+                    contentType: archivo.type // ✅ Especificar contentType explícitamente
+                });
+
+            if (uploadError) {
+                console.error('❌ Error detallado al subir archivo:', {
+                    error: uploadError,
+                    message: uploadError.message,
+                    statusCode: uploadError.statusCode,
+                    archivo: archivo.name,
+                    ruta: rutaArchivo
+                });
+
+                // Mensaje de error más específico para problemas de MIME type
+                if (uploadError.message && uploadError.message.includes('mime type') && uploadError.message.includes('not supported')) {
+                    throw new Error(`El tipo de archivo ${archivo.type} no está permitido en la configuración del Bucket de Supabase. Por favor, ve al Dashboard de Supabase > Storage > notes_attachments > Configuration y añade "${archivo.type}" a "Allowed MIME types".`);
+                }
+
+                throw new Error('Error al subir el archivo: ' + uploadError.message);
+            }
+
+            // Determinar tipo de archivo
+            let tipoArchivo = 'other';
+            if (archivo.type === 'application/pdf') tipoArchivo = 'pdf';
+            else if (archivo.type.startsWith('image/')) tipoArchivo = 'image';
+
+            // Registrar adjunto en la base de datos
+            const { data: adjuntoData, error: adjuntoError } = await this.supabase
+                .from('nota_adjuntos')
+                .insert({
+                    nota_id: notaId,
+                    archivo_url: uploadData.path,
+                    nombre_archivo: archivo.name,
+                    tipo_archivo: tipoArchivo,
+                    content_type: archivo.type,
+                    tamano_bytes: archivo.size,
+                    subido_por: user.id
+                })
+                .select()
+                .single();
+
+            if (adjuntoError) {
+                // Si falla el registro en BD, intentar eliminar el archivo del storage
+                await this.supabase.storage
+                    .from('notes_attachments')
+                    .remove([uploadData.path]);
+                throw new Error('Error al registrar el adjunto: ' + adjuntoError.message);
+            }
+
+            // Actualizar flag tiene_adjuntos en la nota
+            await this.supabase
+                .from('notas')
+                .update({ tiene_adjuntos: true })
+                .eq('id', notaId);
+
+            console.log('✅ Archivo adjunto subido exitosamente:', adjuntoData);
+            return {
+                success: true,
+                data: adjuntoData
+            };
+
+        } catch (error) {
+            console.error('❌ Error al subir archivo adjunto:', error);
+            return {
+                success: false,
+                error: error.message
+            };
+        }
+    }
+
+    /**
+     * Obtener todos los adjuntos de una nota
+     * @param {string} notaId - ID de la nota
+     * @returns {Array} - Lista de adjuntos
+     */
+    async getNoteAttachments(notaId) {
+        try {
+            const { data, error } = await this.supabase
+                .from('nota_adjuntos')
+                .select(`
+                    id,
+                    archivo_url,
+                    nombre_archivo,
+                    tipo_archivo,
+                    content_type,
+                    tamano_bytes,
+                    fecha_subida
+                `)
+                .eq('nota_id', notaId)
+                .order('fecha_subida', { ascending: false });
+
+            if (error) throw error;
+
+            return {
+                success: true,
+                data: data || []
+            };
+
+        } catch (error) {
+            console.error('❌ Error al obtener adjuntos de nota:', error);
+            return {
+                success: false,
+                error: error.message,
+                data: []
+            };
+        }
+    }
+
+    /**
+     * Generar URL firmada para descargar un archivo adjunto
+     * @param {string} archivoUrl - Ruta del archivo en storage
+     * @returns {string} - URL firmada para acceso temporal
+     */
+    async getAttachmentDownloadUrl(archivoUrl) {
+        try {
+            const { data, error } = await this.supabase.storage
+                .from('notes_attachments')
+                .createSignedUrl(archivoUrl, 3600); // URL válida por 1 hora
+
+            if (error) throw error;
+
+            return {
+                success: true,
+                url: data.signedUrl
+            };
+
+        } catch (error) {
+            console.error('❌ Error al generar URL de descarga:', error);
+            return {
+                success: false,
+                error: error.message
+            };
+        }
+    }
+
+    /**
+     * Descargar archivo adjunto como Blob (método recomendado)
+     * @param {string} archivoUrl - Ruta del archivo en storage (solo la ruta relativa)
+     * @returns {Object} - Resultado con blob del archivo o error
+     */
+    async downloadAttachment(archivoUrl) {
+        try {
+            // LOG: Verificar qué se está intentando descargar
+            console.log('📥 Descargando adjunto:', archivoUrl);
+
+            // Limpiar la URL si viene completa (extraer solo la ruta relativa)
+            let rutaLimpia = archivoUrl;
+            
+            // Si la URL es completa (empieza con http), extraer solo la ruta
+            if (archivoUrl.startsWith('http')) {
+                console.warn('⚠️ URL completa detectada, extrayendo ruta relativa...');
+                
+                // Buscar la parte después de /object/sign/notes_attachments/ o /object/public/notes_attachments/
+                const signMatch = archivoUrl.match(/\/object\/sign\/notes_attachments\/(.+)/);
+                const publicMatch = archivoUrl.match(/\/object\/public\/notes_attachments\/(.+)/);
+                
+                if (signMatch) {
+                    rutaLimpia = signMatch[1];
+                } else if (publicMatch) {
+                    rutaLimpia = publicMatch[1];
+                } else {
+                    console.error('❌ No se pudo extraer la ruta del archivo de la URL:', archivoUrl);
+                    throw new Error('Formato de URL de archivo no reconocido');
+                }
+                
+                console.log('✅ Ruta limpia extraída:', rutaLimpia);
+            }
+
+            // Descargar usando storage.download() que devuelve el Blob real
+            const { data, error } = await this.supabase.storage
+                .from('notes_attachments')
+                .download(rutaLimpia);
+
+            if (error) {
+                console.error('❌ Error al descargar desde storage:', error);
+                throw error;
+            }
+
+            if (!data) {
+                throw new Error('No se recibió datos del archivo');
+            }
+
+            console.log('✅ Archivo descargado exitosamente:', {
+                tipo: data.type,
+                tamaño: data.size,
+                ruta: rutaLimpia
+            });
+
+            return {
+                success: true,
+                blob: data // Blob con el contenido real del archivo
+            };
+
+        } catch (error) {
+            console.error('❌ Error al descargar adjunto:', error);
+            return {
+                success: false,
+                error: error.message
+            };
+        }
+    }
+
+    /**
+     * Eliminar un archivo adjunto
+     * @param {string} adjuntoId - ID del adjunto a eliminar
+     * @returns {Object} - Resultado de la operación
+     */
+    async deleteNoteAttachment(adjuntoId) {
+        try {
+            const user = await this.getCurrentUser();
+            if (!user) throw new Error('Usuario no autenticado');
+
+            // Obtener datos del adjunto
+            const { data: adjunto, error: adjuntoError } = await this.supabase
+                .from('nota_adjuntos')
+                .select(`
+                    archivo_url,
+                    nota_id,
+                    subido_por,
+                    notas(autor_id)
+                `)
+                .eq('id', adjuntoId)
+                .single();
+
+            if (adjuntoError) throw new Error('Adjunto no encontrado');
+
+            // Verificar permisos (autor de la nota o quien subió el archivo)
+            const esAutorNota = adjunto.notas.autor_id === user.id;
+            const esQuienSubio = adjunto.subido_por === user.id;
+            
+            if (!esAutorNota && !esQuienSubio) {
+                throw new Error('No tienes permisos para eliminar este adjunto');
+            }
+
+            // Eliminar archivo del storage
+            const { error: storageError } = await this.supabase.storage
+                .from('notes_attachments')
+                .remove([adjunto.archivo_url]);
+
+            if (storageError) {
+                console.warn('⚠️ Error al eliminar archivo del storage:', storageError);
+                // Continuar con eliminación de registro en BD
+            }
+
+            // Eliminar registro de la base de datos
+            const { error: deleteError } = await this.supabase
+                .from('nota_adjuntos')
+                .delete()
+                .eq('id', adjuntoId);
+
+            if (deleteError) throw deleteError;
+
+            // Verificar si la nota aún tiene adjuntos para actualizar el flag
+            const notaId = adjunto.nota_id;
+            if (notaId) {
+                const { data: adjuntosRestantes } = await this.supabase
+                    .from('nota_adjuntos')
+                    .select('id')
+                    .eq('nota_id', notaId);
+
+                const tieneAdjuntos = adjuntosRestantes && adjuntosRestantes.length > 0;
+                
+                await this.supabase
+                    .from('notas')
+                    .update({ tiene_adjuntos: tieneAdjuntos })
+                    .eq('id', notaId);
+            }
+
+            console.log('✅ Archivo adjunto eliminado exitosamente');
+            return {
+                success: true,
+                message: 'Adjunto eliminado exitosamente'
+            };
+
+        } catch (error) {
+            console.error('❌ Error al eliminar archivo adjunto:', error);
+            return {
+                success: false,
+                error: error.message
+            };
+        }
+    }
+
+    /**
+     * Obtener notas con información de adjuntos (para interfaz)
+     * @param {Object} filtros - Filtros de búsqueda
+     * @returns {Array} - Notas con información de adjuntos
+     */
+    async getNotesWithAttachments(filtros = {}) {
+        try {
+            const user = await this.getCurrentUser();
+            if (!user) throw new Error('Usuario no autenticado');
+
+            let query = this.supabase
+                .from('notas')
+                .select(`
+                    id,
+                    titulo,
+                    contenido,
+                    fecha_creacion,
+                    fecha_actualizacion,
+                    fijada,
+                    color_etiqueta,
+                    etiquetas,
+                    tiene_adjuntos,
+                    asignatura_id,
+                    asignaturas(nombre, color)
+                `);
+
+            // Aplicar filtro de usuario/colaboración
+            const { data: subjectIds } = await this.getCollaborativeSubjects();
+            if (subjectIds.length > 0) {
+                query = query.or(`and(autor_id.eq.${user.id},asignatura_id.is.null),asignatura_id.in.(${subjectIds.join(',')})`);
+            } else {
+                query = query.eq('autor_id', user.id);
+            }
+
+            // Aplicar filtros adicionales
+            if (filtros.asignatura_id) {
+                query = query.eq('asignatura_id', filtros.asignatura_id);
+            }
+
+            if (filtros.soloFijadas) {
+                query = query.eq('fijada', true);
+            }
+
+            if (filtros.soloConAdjuntos) {
+                query = query.eq('tiene_adjuntos', true);
+            }
+
+            if (filtros.etiqueta) {
+                query = query.contains('etiquetas', [filtros.etiqueta]);
+            }
+
+            if (filtros.busqueda) {
+                query = query.textSearch('titulo,contenido', filtros.busqueda, { 
+                    type: 'plain', 
+                    config: 'spanish' 
+                });
+            }
+
+            // Ordenar: fijadas primero, luego por fecha
+            query = query.order('fijada', { ascending: false })
+                        .order('fecha_actualizacion', { ascending: false });
+
+            const { data, error } = await query;
+
+            if (error) throw error;
+
+            return {
+                success: true,
+                data: data || []
+            };
+
+        } catch (error) {
+            console.error('❌ Error al obtener notas con adjuntos:', error);
+            return {
+                success: false,
+                error: error.message,
+                data: []
+            };
+        }
+    }
+
+    /**
+     * Actualizar metadatos de una nota (fijar, etiquetas, color)
+     * @param {string} notaId - ID de la nota
+     * @param {Object} updates - Campos a actualizar
+     * @returns {Object} - Resultado de la operación
+     */
+    async updateNoteMetadata(notaId, updates) {
+        try {
+            const user = await this.getCurrentUser();
+            if (!user) throw new Error('Usuario no autenticado');
+
+            // Filtrar solo campos permitidos
+            const allowedFields = ['fijada', 'color_etiqueta', 'etiquetas'];
+            const filteredUpdates = {};
+            
+            for (const field of allowedFields) {
+                if (updates.hasOwnProperty(field)) {
+                    filteredUpdates[field] = updates[field];
+                }
+            }
+
+            if (Object.keys(filteredUpdates).length === 0) {
+                throw new Error('No hay campos válidos para actualizar');
+            }
+
+            // Verificar permisos (solo autor puede modificar metadatos)
+            const { data: nota, error: notaError } = await this.supabase
+                .from('notas')
+                .select('autor_id')
+                .eq('id', notaId)
+                .single();
+
+            if (notaError) throw new Error('Nota no encontrada');
+            if (nota.autor_id !== user.id) {
+                throw new Error('No tienes permisos para modificar esta nota');
+            }
+
+            // Actualizar nota
+            const { data, error } = await this.supabase
+                .from('notas')
+                .update({
+                    ...filteredUpdates,
+                    fecha_actualizacion: new Date().toISOString()
+                })
+                .eq('id', notaId)
+                .select()
+                .single();
+
+            if (error) throw error;
+
+            console.log('✅ Metadatos de nota actualizados:', data);
+            return {
+                success: true,
+                data
+            };
+
+        } catch (error) {
+            console.error('❌ Error al actualizar metadatos de nota:', error);
+            return {
+                success: false,
+                error: error.message
+            };
+        }
+    }
 }
 
 // Instancia global del gestor de base de datos
 window.dbManager = new DatabaseManager();
+
+// Hacer disponible el diagnóstico globalmente para debug
+window.diagnoseStorage = () => window.dbManager.diagnoseStorageSetup();

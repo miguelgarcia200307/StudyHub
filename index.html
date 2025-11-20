@@ -9,6 +9,7 @@
     <link rel="stylesheet" href="css/tasks.css">
     <link rel="stylesheet" href="css/profile.css">
     <link rel="stylesheet" href="css/login.css">
+    <link rel="stylesheet" href="css/chatbot.css">
     <link rel="stylesheet" href="css/chatbot-demos.css">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
@@ -34,8 +35,10 @@
     <link rel="stylesheet" href="css/profile.css">
     <link rel="stylesheet" href="css/animations.css">
     <link rel="stylesheet" href="css/responsive.css">
+    <link rel="stylesheet" href="css/notes-enhanced.css">
     <link rel="stylesheet" href="css/mobile-optimizations.css">
-    <link rel="stylesheet" href="css/chatbot.css">
+    <!-- DEBUG TEMPORAL -->
+    <link rel="stylesheet" href="css/mobile-debug.css">
 </head>
 <body>
     <!-- Pantalla de carga -->
@@ -703,23 +706,63 @@
                     </div>
                 </section>
 
-                <!-- Notas -->
+                <!-- Notas Mejoradas -->
                 <section id="notes-section" class="content-section">
                     <div class="section-header">
-                        <h2>Notas</h2>
-                        <div class="notes-actions">
+                        <div class="header-main">
+                            <h2><i class="fas fa-sticky-note"></i> Sistema de Notas Avanzado</h2>
+                            <p class="section-subtitle">Organiza tus apuntes con archivos adjuntos, etiquetas y filtros avanzados</p>
+                        </div>
+                        <button class="btn btn-primary" id="add-note-btn">
+                            <i class="fas fa-plus"></i>
+                            Nueva Nota
+                        </button>
+                    </div>
+
+                    <!-- Barra de herramientas -->
+                    <div class="notes-toolbar">
+                        <div class="notes-search-section">
                             <div class="search-box">
                                 <i class="fas fa-search"></i>
-                                <input type="text" id="notes-search" placeholder="Buscar notas...">
+                                <input type="text" id="notes-search" placeholder="Buscar en títulos y contenido...">
                             </div>
-                            <button class="btn btn-primary" id="add-note-btn">
-                                <i class="fas fa-plus"></i>
-                                Nueva Nota
+                        </div>
+
+                        <div class="notes-filters">
+                            <select id="notes-subject-filter" class="filter-select">
+                                <option value="">Todas las asignaturas</option>
+                            </select>
+                            
+                            <div class="checkbox-group">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="notes-pinned-filter">
+                                    <span class="checkmark"></span>
+                                    Solo fijadas
+                                </label>
+                            </div>
+                            
+                            <div class="checkbox-group">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="notes-attachments-filter">
+                                    <span class="checkmark"></span>
+                                    Con archivos
+                                </label>
+                            </div>
+
+                            <button class="btn btn-outline" onclick="window.notesManager.clearFilters()">>
+                                <i class="fas fa-filter"></i>
+                                Limpiar filtros
                             </button>
                         </div>
                     </div>
-                    <div class="notes-grid" id="notes-grid">
-                        <!-- Se llena dinámicamente -->
+
+                    <!-- Contenedor de notas -->
+                    <div class="notes-container" id="notes-container">
+                        <!-- Se llena dinámicamente con las notas -->
+                        <div class="loading-state">
+                            <i class="fas fa-spinner fa-spin"></i>
+                            <p>Cargando notas...</p>
+                        </div>
                     </div>
                 </section>
 
@@ -1180,52 +1223,159 @@
         </div>
     </div>
 
-    <!-- Modal para notas -->
-    <div id="note-modal" class="modal">
-        <div class="modal-content">
+    <!-- Modal Mejorado para Notas con Adjuntos -->
+    <div id="enhanced-note-modal" class="modal enhanced-modal">
+        <div class="modal-content enhanced-modal-content">
             <div class="modal-header">
                 <div class="modal-title-section">
                     <i class="fas fa-sticky-note"></i>
-                    <h3 id="note-modal-title">Nueva Nota</h3>
+                    <h3 id="enhanced-note-modal-title">Nueva Nota</h3>
                 </div>
-                <button class="modal-close" onclick="closeModal('note-modal')">
+                <button class="modal-close" onclick="window.notesManager.closeNoteModal()">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
-            <div class="modal-body">
-                <form id="note-form">
-                    <div class="form-group">
-                        <label for="note-title">
-                            <i class="fas fa-heading"></i>
-                            Título de la Nota
-                        </label>
-                        <input type="text" id="note-title" placeholder="Título descriptivo de tu nota" required>
+            
+            <div class="modal-body enhanced-modal-body">
+                <form id="enhanced-note-form" class="enhanced-note-form">
+                    <div class="form-layout">
+                        <!-- Información básica -->
+                        <div class="form-section">
+                            <h4 class="form-section-title">
+                                <i class="fas fa-info-circle"></i>
+                                Información básica
+                            </h4>
+                            
+                            <div class="form-group">
+                                <label for="enhanced-note-title">
+                                    <i class="fas fa-heading"></i>
+                                    Título de la nota *
+                                </label>
+                                <input type="text" 
+                                       id="enhanced-note-title" 
+                                       placeholder="Título descriptivo de tu nota" 
+                                       required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="enhanced-note-content">
+                                    <i class="fas fa-edit"></i>
+                                    Contenido
+                                </label>
+                                <textarea id="enhanced-note-content" 
+                                          rows="6" 
+                                          placeholder="Escribe el contenido de tu nota aquí..."></textarea>
+                            </div>
+                        </div>
+
+                        <!-- Organización -->
+                        <div class="form-section">
+                            <h4 class="form-section-title">
+                                <i class="fas fa-tags"></i>
+                                Organización
+                            </h4>
+                            
+                            <div class="form-row">
+                                <div class="form-group flex-1">
+                                    <label for="enhanced-note-subject">
+                                        <i class="fas fa-book"></i>
+                                        Asignatura
+                                    </label>
+                                    <select id="enhanced-note-subject">
+                                        <option value="">Sin asignatura</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="form-group flex-1">
+                                    <label for="enhanced-note-color">
+                                        <i class="fas fa-palette"></i>
+                                        Color de etiqueta
+                                    </label>
+                                    <select id="enhanced-note-color">
+                                        <option value="">Sin color</option>
+                                        <option value="#e74c3c" data-color="#e74c3c">🔴 Rojo</option>
+                                        <option value="#3498db" data-color="#3498db">🔵 Azul</option>
+                                        <option value="#2ecc71" data-color="#2ecc71">🟢 Verde</option>
+                                        <option value="#f39c12" data-color="#f39c12">🟡 Amarillo</option>
+                                        <option value="#9b59b6" data-color="#9b59b6">🟣 Morado</option>
+                                        <option value="#1abc9c" data-color="#1abc9c">🟦 Turquesa</option>
+                                        <option value="#e67e22" data-color="#e67e22">🟠 Naranja</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="enhanced-note-tags">
+                                    <i class="fas fa-hashtag"></i>
+                                    Etiquetas
+                                </label>
+                                <input type="text" 
+                                       id="enhanced-note-tags" 
+                                       placeholder="ej: importante, examen, repaso (separar con comas)">
+                                <small class="form-help">Separa las etiquetas con comas</small>
+                            </div>
+
+                            <div class="form-group checkbox-group">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="enhanced-note-pinned">
+                                    <span class="checkmark"></span>
+                                    <i class="fas fa-thumbtack"></i>
+                                    Fijar esta nota (aparecerá primero)
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Archivos adjuntos -->
+                        <div class="form-section">
+                            <h4 class="form-section-title">
+                                <i class="fas fa-paperclip"></i>
+                                Archivos adjuntos
+                            </h4>
+                            
+                            <div class="attachments-section">
+                                <div id="enhanced-attachment-drop-zone" class="drop-zone">
+                                    <div class="drop-zone-content">
+                                        <i class="fas fa-cloud-upload-alt"></i>
+                                        <p><strong>Arrastra archivos aquí</strong> o 
+                                           <button type="button" class="btn-link add-attachment-btn">selecciona archivos</button>
+                                        </p>
+                                        <small>PDFs e imágenes, máximo 50MB por archivo</small>
+                                    </div>
+                                </div>
+
+                                <input type="file" 
+                                       id="note-file-input" 
+                                       multiple 
+                                       accept="application/pdf,image/*" 
+                                       style="display: none;">
+
+                                <div id="enhanced-attachments-list" class="attachments-list">
+                                    <!-- Lista de archivos adjuntos existentes -->
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label for="note-content">
-                            <i class="fas fa-edit"></i>
-                            Contenido
-                        </label>
-                        <textarea id="note-content" rows="8" placeholder="Escribe el contenido de tu nota aquí..." required></textarea>
-                    </div>
-                    <div class="form-group">
-                        <label for="note-subject">
-                            <i class="fas fa-tag"></i>
-                            Asignatura
-                        </label>
-                        <select id="note-subject">
-                            <option value="">Sin asignatura</option>
-                        </select>
-                    </div>
+
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-outline" onclick="closeModal('note-modal')">
-                            <i class="fas fa-times"></i>
-                            Cancelar
-                        </button>
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-save"></i>
-                            Guardar Nota
-                        </button>
+                        <div class="modal-actions">
+                            <button type="button" 
+                                    class="btn btn-outline" 
+                                    onclick="window.notesManager.closeNoteModal()">
+                                <i class="fas fa-times"></i>
+                                Cancelar
+                            </button>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i>
+                                Guardar Nota
+                            </button>
+                        </div>
+                        
+                        <div class="modal-help">
+                            <small>
+                                <i class="fas fa-info-circle"></i>
+                                Atajos: <kbd>Ctrl+Enter</kbd> guardar, <kbd>Esc</kbd> cancelar
+                            </small>
+                        </div>
                     </div>
                 </form>
             </div>
@@ -1318,6 +1468,69 @@
             </form>
         </div>
     </div>
+
+    <!-- Modal de Vista Previa de Nota (Solo Lectura) -->
+    <div id="modal-preview-note" class="modal">
+        <div class="modal-content modal-preview-note">
+            <div class="modal-header">
+                <div class="modal-title-section">
+                    <i class="fas fa-eye"></i>
+                    <h3>Vista Previa de Nota</h3>
+                </div>
+                <button class="modal-close" onclick="window.notesManager.closePreviewModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="modal-body">
+                <!-- Información de la nota -->
+                <div class="note-preview-header">
+                    <h2 id="preview-note-title" class="preview-title">Título de la nota</h2>
+                    <div class="preview-meta">
+                        <span id="preview-note-date" class="preview-date">
+                            <i class="fas fa-calendar"></i>
+                            Fecha
+                        </span>
+                        <span id="preview-note-subject" class="preview-subject"></span>
+                    </div>
+                </div>
+
+                <!-- Contenido de la nota -->
+                <div class="note-preview-content">
+                    <h4 class="preview-section-title">
+                        <i class="fas fa-align-left"></i>
+                        Contenido
+                    </h4>
+                    <div id="preview-note-content" class="preview-content-text">
+                        Contenido de la nota...
+                    </div>
+                </div>
+
+                <!-- Archivos adjuntos -->
+                <div id="preview-attachments-section" class="note-preview-attachments" style="display: none;">
+                    <h4 class="preview-section-title">
+                        <i class="fas fa-paperclip"></i>
+                        Archivos adjuntos (<span id="preview-attachments-count">0</span>)
+                    </h4>
+                    <div id="preview-attachments-list" class="preview-attachments-list">
+                        <!-- Se llena dinámicamente con imágenes y archivos -->
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline" onclick="window.notesManager.closePreviewModal()">
+                    <i class="fas fa-times"></i>
+                    Cerrar
+                </button>
+                <button type="button" id="preview-edit-btn" class="btn btn-primary" onclick="window.notesManager.editFromPreview()">
+                    <i class="fas fa-edit"></i>
+                    Editar Nota
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Modal para gestionar colaboradores -->
     <div id="collaborators-modal" class="modal">
         <div class="modal-content">
@@ -1476,10 +1689,16 @@
     <script src="js/auth.js"></script>
     <script src="js/calendar.js"></script>
     <script src="js/notes.js"></script>
+    <script src="js/notes-attachments-extension.js"></script>
+
     <script src="js/subjects.js"></script>
     <script src="js/dashboard.js"></script>
     <script src="js/main.js"></script>
     <script src="js/chatbot.js"></script>
+    
+    <!-- Herramientas de diagnóstico y configuración de storage -->
+    <script src="js/storage-diagnostics.js"></script>
+    <script src="js/storage-auto-setup.js"></script>
     
     <!-- Script de configuración de base de datos de prueba -->
     <script src="db/setup-test-db.js"></script>
@@ -1487,6 +1706,17 @@
     <!-- Inicializar Calendar Manager -->
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 DOM Content Loaded - Inicializando aplicación...');
+            
+            // Inicializar App Manager
+            console.log('Inicializando App Manager...');
+            if (typeof AppManager !== 'undefined') {
+                window.appManager = new AppManager();
+                console.log('✅ App Manager inicializado correctamente');
+            } else {
+                console.error('❌ AppManager no está definido');
+            }
+            
             console.log('Inicializando Calendar Manager...');
             if (typeof CalendarManager !== 'undefined') {
                 window.calendarManager = new CalendarManager();
