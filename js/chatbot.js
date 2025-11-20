@@ -17,7 +17,13 @@ class StudyBot {
             entities: {}
         };
         
-        // Mapa de sinónimos para unificar vocabulario
+        // ========== DATOS DEL USUARIO ==========
+        this.currentUser = null;
+        this.currentUserProfile = null;
+        this.userSubjects = [];
+        this.dataLoaded = false;
+        
+        // Mapa de sinónimos para unificar vocabulario (AMPLIADO)
         this.synonymMap = {
             'materia': 'asignatura',
             'clase': 'asignatura',
@@ -27,6 +33,7 @@ class StudyBot {
             'parcial': 'examen',
             'prueba': 'examen',
             'test': 'examen',
+            'quiz': 'examen',
             'evaluacion': 'examen',
             'trabajo': 'proyecto',
             'entrega': 'proyecto',
@@ -39,7 +46,9 @@ class StudyBot {
             'pendientes': 'tareas',
             'inicio': 'dashboard',
             'principal': 'dashboard',
-            'recordatorios': 'calendario'
+            'recordatorios': 'calendario',
+            'organizarme': 'organizar',
+            'organizame': 'organizar'
         };
         
         // Inicializar cuando el DOM esté listo
@@ -139,7 +148,47 @@ class StudyBot {
         
         this.createChatInterface();
         this.isInitialized = true;
+        
+        // Cargar datos del usuario de forma asíncrona sin bloquear la UI
+        this.loadUserData().catch(err => {
+            console.warn('Error cargando datos del usuario:', err);
+        });
+        
         console.log('✅ StudyBot inicializado correctamente');
+    }
+    
+    // ========== NUEVA FUNCIÓN: CARGAR DATOS DEL USUARIO ==========
+    async loadUserData() {
+        if (!window.dbManager) {
+            console.warn('⚠️ dbManager no disponible');
+            return;
+        }
+        
+        try {
+            // 1. Obtener usuario actual
+            this.currentUser = await window.dbManager.getCurrentUser();
+            if (!this.currentUser) {
+                console.log('ℹ️ No hay usuario autenticado');
+                return;
+            }
+            
+            console.log('👤 Usuario actual:', this.currentUser.email);
+            
+            // 2. Obtener perfil del usuario
+            this.currentUserProfile = await window.dbManager.getUserProfile(this.currentUser.id);
+            if (this.currentUserProfile) {
+                console.log('✅ Perfil cargado:', this.currentUserProfile.nombre);
+            }
+            
+            // 3. Obtener asignaturas del usuario
+            this.userSubjects = await window.dbManager.loadSubjects();
+            console.log('📚 Asignaturas cargadas:', this.userSubjects.length);
+            
+            this.dataLoaded = true;
+            
+        } catch (error) {
+            console.error('❌ Error en loadUserData:', error);
+        }
     }
 
     // =================================================================
@@ -308,7 +357,52 @@ class StudyBot {
             entities.needsExample = true;
         }
         
+        // ========== NUEVO: Detectar keyword de tema (para búsqueda de notas) ==========
+        // Buscar palabras después de "sobre", "de", "acerca de"
+        const topicPatterns = [
+            /(?:sobre|acerca de)\s+(\w+(?:\s+\w+)?)/,
+            /\b(?:de|en)\s+(\w+(?:\s+\w+)?)/
+        ];
+        
+        for (const pattern of topicPatterns) {
+            const match = normalizedText.match(pattern);
+            if (match && match[1]) {
+                entities.topicKeyword = match[1].trim();
+                break;
+            }
+        }
+        
+        // ========== NUEVO: Detectar asignatura mencionada ==========
+        if (this.userSubjects && this.userSubjects.length > 0) {
+            const detectedSubject = this.detectSubjectInText(normalizedText);
+            if (detectedSubject) {
+                entities.subjectId = detectedSubject.id;
+                entities.subjectName = detectedSubject.nombre;
+            }
+        }
+        
         return entities;
+    }
+    
+    // ========== NUEVA FUNCIÓN: DETECTAR ASIGNATURA EN TEXTO ==========
+    detectSubjectInText(normalizedText) {
+        if (!this.userSubjects || this.userSubjects.length === 0) {
+            return null;
+        }
+        
+        // Buscar coincidencia con nombres de asignaturas (ignorando mayúsculas y acentos)
+        for (const subject of this.userSubjects) {
+            const subjectName = subject.nombre
+                .toLowerCase()
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '');
+            
+            if (normalizedText.includes(subjectName)) {
+                return subject;
+            }
+        }
+        
+        return null;
     }
 
     // =================================================================
@@ -479,6 +573,59 @@ class StudyBot {
             
             // NUEVOS INTENTS PARA CONVERSACIÓN NATURAL
             
+            // Consulta del nombre del usuario
+            {
+                name: 'consulta_nombre_usuario',
+                patterns: [
+                    /^(sabes|conoces|recuerdas|cual es) mi nombre/,
+                    /^como me llamo/,
+                    /^mi nombre es/,
+                    /^tengo nombre/
+                ],
+                keywords: ['sabes', 'conoces', 'recuerdas', 'nombre', 'llamo'],
+                priority: 16,
+                minScore: 10
+            },
+            
+            // Consulta general de asignaturas
+            {
+                name: 'consulta_asignaturas_general',
+                patterns: [
+                    /^(que|cuales|cuantas) (asignaturas|materias|clases)/,
+                    /^(ver|mostrar|listar|dame) (mis )?(asignaturas|materias|clases)/,
+                    /^tengo (asignaturas|materias)/
+                ],
+                keywords: ['que', 'cuales', 'cuantas', 'asignaturas', 'materias', 'tengo', 'listar'],
+                priority: 15,
+                minScore: 10
+            },
+            
+            // Consulta de detalle de asignatura específica
+            {
+                name: 'consulta_detalle_asignatura',
+                patterns: [
+                    /(hablame|dime|cuentame|informacion) (de|sobre) (la )?(asignatura|materia)/,
+                    /(quien es|cual es) (el )?(profesor|docente) de/,
+                    /(que|cual) (horario|salon|aula) (tengo|tiene)/
+                ],
+                keywords: ['profesor', 'docente', 'horario', 'salon', 'aula', 'informacion'],
+                priority: 14,
+                minScore: 10
+            },
+            
+            // Consulta de notas
+            {
+                name: 'consulta_notas',
+                patterns: [
+                    /(tengo|hay|existe|busca|buscar|ver|mostrar) (alguna |alguno )?(nota|notas|apunte|apuntes|anotacion)/,
+                    /(sobre|de|acerca de|relacionado con) (.*)/,
+                    /^dame (mis )?(notas|apuntes)/
+                ],
+                keywords: ['tengo', 'hay', 'nota', 'notas', 'apunte', 'apuntes', 'sobre', 'de', 'buscar'],
+                priority: 15,
+                minScore: 10
+            },
+            
             // Motivación y ánimo para estudiar
             {
                 name: 'motivacion_estudio',
@@ -591,6 +738,16 @@ class StudyBot {
                 return this.handleAyudaPerfil();
             case 'limitaciones_chatbot':
                 return this.handleLimitaciones();
+            // ===== NUEVOS HANDLERS =====
+            case 'consulta_nombre_usuario':
+                return this.handleConsultaNombreUsuario();
+            case 'consulta_asignaturas_general':
+                return this.handleConsultaAsignaturasGeneral();
+            case 'consulta_detalle_asignatura':
+                return this.handleConsultaDetalleAsignatura(entities);
+            case 'consulta_notas':
+                return this.handleConsultaNotas(entities);
+            // ===== HANDLERS EXISTENTES =====
             case 'motivacion_estudio':
                 return this.handleMotivacionEstudio(entities);
             case 'gestion_estres':
@@ -619,10 +776,14 @@ class StudyBot {
             timeGreeting = '¡Buenas noches';
         }
         
-        const personalGreetings = [
+        const personalGreetings = userName ? [
             `${timeGreeting}${userName}! 👋 Soy StudyBot, tu asistente académico personal.`,
             `¡Hola${userName}! 🎓 Es un placer ayudarte con tus estudios en E-StudyHub.`,
             `${timeGreeting}${userName}! 🤖 Estoy aquí para hacer tu experiencia académica más fácil.`
+        ] : [
+            `${timeGreeting}! 👋 Soy StudyBot, tu asistente académico en E-StudyHub.`,
+            `¡Hola! 🎓 Estoy aquí para ayudarte a organizar mejor tus estudios.`,
+            `${timeGreeting}! 🤖 Soy tu asistente para gestionar tu vida académica.`
         ];
         
         const greeting = personalGreetings[Math.floor(Math.random() * personalGreetings.length)];
@@ -811,6 +972,191 @@ class StudyBot {
     }
 
     // =================================================================
+    // NUEVOS HANDLERS PARA DATOS REALES DEL USUARIO
+    // =================================================================
+
+    handleConsultaNombreUsuario() {
+        const nombre = this.getUserName();
+        
+        const responses = nombre ? [
+            `Claro, te llamas ${nombre.trim()} 😄. Puedo usar tu nombre para hacer más personal nuestra conversación.`,
+            `Por supuesto, tu nombre es ${nombre.trim()} 👋. Me gusta poder dirigirme a ti directamente.`,
+            `Sí, recuerdo que te llamas ${nombre.trim()} 🎓. ¿En qué te puedo ayudar hoy?`
+        ] : [
+            `Todavía no tengo tu nombre guardado 😅. Puedes configurarlo en tu perfil para que pueda saludarte de forma más personalizada.`,
+            `Aún no conozco tu nombre 🤔. Ve a la sección de Perfil y agrégalo para que nuestras conversaciones sean más personales.`
+        ];
+        
+        const message = responses[Math.floor(Math.random() * responses.length)];
+        
+        return {
+            message,
+            quickReplies: nombre ? [
+                { text: '📚 Ver mis asignaturas', action: 'navigate_subjects' },
+                { text: '📝 Ver mis notas', action: 'navigate_notes' },
+                { text: '✅ Ver mis tareas', action: 'navigate_tasks' }
+            ] : [
+                { text: '👤 Ir a mi Perfil', action: 'navigate_profile' },
+                { text: '📚 Ver mis asignaturas', action: 'navigate_subjects' }
+            ]
+        };
+    }
+
+    handleConsultaAsignaturasGeneral() {
+        if (!this.userSubjects || this.userSubjects.length === 0) {
+            return {
+                message: `📚 **Asignaturas**\n\nNo encuentro asignaturas registradas todavía. Puedes crear una nueva desde la sección Asignaturas del menú.\n\n💡 **Tip:** También puedes unirte a asignaturas usando un código de acceso compartido.`,
+                quickReplies: [
+                    { text: '📚 Ir a Asignaturas', action: 'navigate_subjects' },
+                    { text: '🔑 ¿Cómo usar código?', action: 'help_subjects' },
+                    { text: '❓ Ayuda general', action: 'show_help' }
+                ]
+            };
+        }
+        
+        // Mostrar máximo 5 asignaturas
+        const subjectsToShow = this.userSubjects.slice(0, 5);
+        let subjectsList = subjectsToShow.map((subject, index) => {
+            const profesor = subject.profesor ? ` - Profesor: ${subject.profesor}` : '';
+            return `${index + 1}. **${subject.nombre}**${profesor}`;
+        }).join('\n');
+        
+        const totalCount = this.userSubjects.length;
+        const moreText = totalCount > 5 ? `\n\n_(Y ${totalCount - 5} más...)_` : '';
+        
+        const message = `📚 **Tus Asignaturas (${totalCount})**\n\n${subjectsList}${moreText}\n\n¿Te gustaría ver más detalles de alguna asignatura?`;
+        
+        return {
+            message,
+            quickReplies: [
+                { text: '📚 Ir a Asignaturas', action: 'navigate_subjects' },
+                { text: '📅 Ver mi calendario', action: 'navigate_calendar' },
+                { text: '📝 Ver mis notas', action: 'navigate_notes' }
+            ]
+        };
+    }
+
+    handleConsultaDetalleAsignatura(entities) {
+        const { subjectId, subjectName } = entities;
+        
+        if (!subjectId && !subjectName) {
+            return {
+                message: `🤔 No detecté qué asignatura específica quieres consultar.\n\nPuedes preguntarme, por ejemplo:\n• "Háblame de la asignatura de Matemáticas"\n• "¿Quién es el profesor de Programación?"\n• "¿Qué horario tengo de Física?"`,
+                quickReplies: [
+                    { text: '📚 Ver todas las asignaturas', action: 'navigate_subjects' },
+                    { text: '❓ Ayuda con asignaturas', action: 'help_subjects' }
+                ]
+            };
+        }
+        
+        // Buscar la asignatura
+        const subject = this.userSubjects.find(s => 
+            s.id === subjectId || s.nombre.toLowerCase().includes(subjectName?.toLowerCase())
+        );
+        
+        if (!subject) {
+            return {
+                message: `🔍 No encontré la asignatura "${subjectName || 'mencionada'}" en tus asignaturas.\n\n¿Quieres ver todas tus asignaturas?`,
+                quickReplies: [
+                    { text: '📚 Ver mis asignaturas', action: 'navigate_subjects' },
+                    { text: '🔑 Unirme con código', action: 'help_subjects' }
+                ]
+            };
+        }
+        
+        // Mostrar detalles
+        const profesor = subject.profesor || 'No especificado';
+        const horario = subject.horario || 'No especificado';
+        const salon = subject.salon || 'No especificado';
+        
+        const message = `📚 **${subject.nombre}**\n\n👨‍🏫 **Profesor:** ${profesor}\n⏰ **Horario:** ${horario}\n🚪 **Salón:** ${salon}\n\n¿Qué te gustaría hacer con esta asignatura?`;
+        
+        return {
+            message,
+            quickReplies: [
+                { text: '📚 Ir a Asignaturas', action: 'navigate_subjects' },
+                { text: '📝 Ver notas de esta materia', action: 'navigate_notes' },
+                { text: '📅 Ver calendario', action: 'navigate_calendar' }
+            ]
+        };
+    }
+
+    async handleConsultaNotas(entities) {
+        const { topicKeyword, subjectId, subjectName } = entities;
+        
+        if (!window.dbManager) {
+            return {
+                message: '❌ No puedo acceder a las notas en este momento.',
+                quickReplies: [
+                    { text: '📝 Ir a Notas', action: 'navigate_notes' }
+                ]
+            };
+        }
+        
+        // Si no hay tema ni asignatura, preguntar
+        if (!topicKeyword && !subjectId && !subjectName) {
+            return {
+                message: `🤔 ¿Sobre qué tema o asignatura quieres buscar notas?\n\nPuedes preguntarme:\n• "¿Tengo alguna nota sobre redes?"\n• "Muéstrame mis notas de programación"\n• "¿Tengo apuntes de matemáticas?"`,
+                quickReplies: [
+                    { text: '📝 Ver todas mis notas', action: 'navigate_notes' },
+                    { text: '📚 Ver mis asignaturas', action: 'navigate_subjects' }
+                ]
+            };
+        }
+        
+        try {
+            // Buscar notas
+            const searchTerm = topicKeyword || subjectName || '';
+            const allNotes = await window.dbManager.loadNotes(searchTerm);
+            
+            // Filtrar por asignatura si se detectó una
+            let filteredNotes = allNotes;
+            if (subjectId) {
+                filteredNotes = allNotes.filter(note => note.asignatura_id === subjectId);
+            }
+            
+            if (filteredNotes.length === 0) {
+                return {
+                    message: `🔍 **Búsqueda de notas**\n\nNo encontré notas relacionadas con "${searchTerm}" 🧐.\n\nPuedes crear una nueva nota en la sección Notas para guardar esa información.`,
+                    quickReplies: [
+                        { text: '📝 Ir a mis notas', action: 'navigate_notes' },
+                        { text: '📚 Ver asignaturas', action: 'navigate_subjects' }
+                    ]
+                };
+            }
+            
+            // Mostrar máximo 5 notas
+            const notesToShow = filteredNotes.slice(0, 5);
+            const notesList = notesToShow.map((note, index) => {
+                const subjectInfo = note.asignaturas ? ` (${note.asignaturas.nombre})` : '';
+                return `${index + 1}. **${note.titulo}**${subjectInfo}`;
+            }).join('\n');
+            
+            const totalCount = filteredNotes.length;
+            const moreText = totalCount > 5 ? `\n\n_(Y ${totalCount - 5} más...)_` : '';
+            
+            const message = `📝 **Notas encontradas (${totalCount})**\n\nRelacionadas con "${searchTerm}":\n\n${notesList}${moreText}\n\nPuedes verlas completas en la sección de Notas.`;
+            
+            return {
+                message,
+                quickReplies: [
+                    { text: '📝 Ir a mis notas', action: 'navigate_notes' },
+                    { text: '🔍 Buscar otra cosa', action: 'show_help' }
+                ]
+            };
+            
+        } catch (error) {
+            console.error('Error buscando notas:', error);
+            return {
+                message: `❌ Hubo un error al buscar tus notas. Puedes intentar acceder directamente a la sección de Notas.`,
+                quickReplies: [
+                    { text: '📝 Ir a Notas', action: 'navigate_notes' }
+                ]
+            };
+        }
+    }
+
+    // =================================================================
     // NUEVOS HANDLERS PARA INTELIGENCIA CONVERSACIONAL
     // =================================================================
 
@@ -992,11 +1338,12 @@ class StudyBot {
             const firstFallbacks = [
                 '🤔 Hmm, no estoy seguro de haber entendido exactamente lo que necesitas.',
                 '😅 Disculpa, esa consulta no me quedó del todo clara.',
-                '🤖 No pude procesar esa solicitud completamente. ¿Podrías reformularla?'
+                '🤖 No pude procesar esa solicitud completamente. ¿Podrías reformularla?',
+                '💭 No entendí bien tu pregunta. ¿Puedes decirlo de otra forma?'
             ];
             
             return {
-                message: `${firstFallbacks[Math.floor(Math.random() * firstFallbacks.length)]}\n\n${suggestions}\n\n💡 **Tip:** Intenta preguntarme sobre asignaturas, calendario, tareas o notas.`,
+                message: `${firstFallbacks[Math.floor(Math.random() * firstFallbacks.length)]}\n\n${suggestions}\n\n💡 **Tip:** Puedo ayudarte con asignaturas, calendario, tareas o notas.`,
                 quickReplies: [
                     { text: '📚 Ayuda con Asignaturas', action: 'help_subjects' },
                     { text: '📅 Usar el Calendario', action: 'help_calendar' },
@@ -1007,7 +1354,7 @@ class StudyBot {
         
         if (this.conversationContext.fallbackCount === 2) {
             return {
-                message: `😔 Parece que no nos estamos entendiendo bien.\n\n${suggestions}\n\n**Ejemplos de cosas que puedes preguntarme:**\n• "¿Cómo creo una asignatura?"\n• "Llévame al calendario"\n• "¿Cómo agrego una tarea?"\n• "Ayuda con notas"\n\n¿Quieres ver todo lo que puedo hacer?`,
+                message: `😔 Parece que no nos estamos entendiendo bien.\n\n${suggestions}\n\n**Ejemplos de cosas que puedes preguntarme:**\n• "¿Cómo creo una asignatura?"\n• "Llévame al calendario"\n• "¿Qué asignaturas tengo?"\n• "¿Tengo notas sobre matemáticas?"\n\n¿Quieres ver todo lo que puedo hacer?`,
                 quickReplies: [
                     { text: '🎯 Mostrar todo lo que sabes', action: 'show_help' },
                     { text: '📚 Asignaturas', action: 'help_subjects' },
@@ -1041,7 +1388,9 @@ class StudyBot {
             nota: '📝 ¿Necesitas ayuda con **Notas**?',
             apunte: '📝 ¿Hablamos de tus **notas y apuntes**?',
             perfil: '👤 ¿Quieres configurar tu **Perfil**?',
-            configurar: '⚙️ ¿Buscas **configurar algo**?'
+            configurar: '⚙️ ¿Buscas **configurar algo**?',
+            nombre: '👤 ¿Preguntas por tu **nombre**?',
+            buscar: '🔍 ¿Quieres **buscar** algo específico?'
         };
         
         for (const token of tokens) {
@@ -1058,16 +1407,21 @@ class StudyBot {
     // =================================================================
 
     getUserName() {
-        try {
-            if (window.dbManager && window.dbManager.getCurrentUser) {
-                const user = window.dbManager.getCurrentUser();
-                if (user && user.name) {
-                    return ` ${user.name.split(' ')[0]}`;
-                }
-            }
-        } catch (error) {
-            console.log('No se pudo obtener el nombre del usuario');
+        // Prioridad 1: Usar perfil cargado
+        if (this.currentUserProfile && this.currentUserProfile.nombre) {
+            const fullName = this.currentUserProfile.nombre.trim();
+            // Retornar solo el primer nombre
+            const firstName = fullName.split(' ')[0];
+            return ` ${firstName}`;
         }
+        
+        // Prioridad 2: Usar email del usuario actual
+        if (this.currentUser && this.currentUser.email) {
+            const emailName = this.currentUser.email.split('@')[0];
+            return ` ${emailName}`;
+        }
+        
+        // Sin datos disponibles
         return '';
     }
 
@@ -1323,8 +1677,8 @@ class StudyBot {
 
         messagesContainer.appendChild(messageElement);
         
-        // Scroll suave al final
-        this.smoothScrollToBottom();
+        // Scroll inteligente al nuevo mensaje
+        this.smartScrollToMessage(messageElement);
         
         // Animación de entrada más natural
         setTimeout(() => {
@@ -1333,6 +1687,75 @@ class StudyBot {
         }, 50);
     }
 
+    smartScrollToMessage(messageElement) {
+        const messagesContainer = document.getElementById('chatbot-messages');
+        if (!messagesContainer || !messageElement) {
+            // Fallback al comportamiento anterior
+            this.smoothScrollToBottom();
+            return;
+        }
+
+        // Esperar a que el DOM se actualice completamente
+        setTimeout(() => {
+            const containerRect = messagesContainer.getBoundingClientRect();
+            const messageRect = messageElement.getBoundingClientRect();
+            const containerScrollTop = messagesContainer.scrollTop;
+            const containerHeight = messagesContainer.clientHeight;
+            
+            // Obtener la posición del mensaje relativa al contenedor
+            const messageOffsetTop = messageElement.offsetTop;
+            const messageHeight = messageElement.offsetHeight;
+            
+            // Buscar el contenido del texto del mensaje (excluyendo quick replies)
+            const messageContent = messageElement.querySelector('.message-content');
+            const quickRepliesElement = messageElement.querySelector('.quick-replies');
+            
+            let messageContentHeight = messageContent ? messageContent.offsetHeight : messageHeight * 0.6;
+            
+            // Si hay quick replies, ajustar la altura del contenido del texto
+            if (quickRepliesElement) {
+                const quickRepliesHeight = quickRepliesElement.offsetHeight;
+                messageContentHeight = messageHeight - quickRepliesHeight;
+            }
+            
+            // Margen de respiración desde el top del contenedor (responsive)
+            const topPadding = window.innerWidth <= 480 ? 12 : 20;
+            
+            // Si el mensaje + contenido cabe completo en el contenedor con margen
+            if (messageHeight + topPadding <= containerHeight) {
+                // Mostrar el mensaje desde arriba con el margen de respiración
+                const targetScrollTop = Math.max(0, messageOffsetTop - topPadding);
+                
+                messagesContainer.scrollTo({
+                    top: targetScrollTop,
+                    behavior: 'smooth'
+                });
+            }
+            // Si solo el contenido del texto cabe (priorizar texto sobre quick replies)
+            else if (messageContentHeight + topPadding * 2 <= containerHeight) {
+                // Posicionar para mostrar principalmente el contenido del mensaje
+                const targetScrollTop = Math.max(0, messageOffsetTop - topPadding);
+                
+                messagesContainer.scrollTo({
+                    top: targetScrollTop,
+                    behavior: 'smooth'
+                });
+            }
+            // Si ni siquiera el contenido cabe completo (mensaje muy largo)
+            else {
+                // Mostrar desde el inicio del mensaje, el usuario podrá hacer scroll hacia abajo
+                const targetScrollTop = Math.max(0, messageOffsetTop - topPadding / 2);
+                
+                messagesContainer.scrollTo({
+                    top: targetScrollTop,
+                    behavior: 'smooth'
+                });
+            }
+            
+        }, 100); // Delay para asegurar que el renderizado esté completo
+    }
+
+    // Función legacy para compatibilidad (usada por typing indicator y otras funciones)
     smoothScrollToBottom() {
         const messagesContainer = document.getElementById('chatbot-messages');
         if (!messagesContainer) return;
